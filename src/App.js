@@ -1,24 +1,35 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import DashboardLayout from "./components/layouts/DashboardLayout";
+import RiderManagement from "./components/RiderManagement/RiderManagment";
+import AddNewRider from "./components/RiderManagement/AddNewRider";
+import LiveDispatch from "./components/LiveDispatch/livedispatch";
+import DispatchDetail from "./components/LiveDispatch/DispatchDetail";
+import TokenManagement from "./components/TokenManagement/TokenManagement";
+import OverViewManagment from "./components/overview/OverViewManagment";
+import BulkGenricIncoming from "./components/BulkManagment/BulkGenricIncoming";
+import RTConnection from "./components/FlowManagment/RTConnection";
+import CSEscalation from "./components/FlowManagment/CSEscalation";
+import WaybillForamater from "./components/FlowManagment/WaybillForamater";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="/" element={<OverViewManagment />} />
+          <Route path="rider-management" element={<RiderManagement />} />
+          <Route path="add-rider" element={<AddNewRider />} />
+          <Route path="live-dispatch" element={<LiveDispatch />} />
+          <Route path="dispatch-details" element={<DispatchDetail />} />
+          <Route path="token-management" element={<TokenManagement />} />
+          <Route path="bulk-gi" element={<BulkGenricIncoming />} />
+          <Route path="rt-connection" element={<RTConnection />} />
+          <Route path="cs-escalation" element={<CSEscalation />} />
+          <Route path="waybill-formater" element={<WaybillForamater />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 
