@@ -43,10 +43,15 @@ const styles = {
     lineHeight: "1.6",
     maxWidth: "500px",
   },
+  buttonGroup: {
+    display: "flex",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
   addButton: {
     display: "flex",
     alignItems: "center",
-    padding: "16px 32px",
+    padding: "15px 30px",
     background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
     color: "#ffffff",
     border: "none",
@@ -56,33 +61,33 @@ const styles = {
     fontWeight: "600",
     boxShadow: "0 8px 25px rgba(16, 185, 129, 0.3)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    position: "relative",
-    overflow: "hidden",
+    whiteSpace: "nowrap",
   },
   riderButton: {
     display: "flex",
     alignItems: "center",
-    padding: "16px 32px",
-    background: "linear-gradient(135deg, #face1fff 0%, #face1fff 100%)",
+    padding: "15px 30px",
+    background: "linear-gradient(135deg, #face1f 0%, #f59e0b 100%)",
     color: "#222",
     border: "none",
     borderRadius: "12px",
     cursor: "pointer",
     fontSize: "16px",
     fontWeight: "600",
-    boxShadow: "0 6px 20px rgba(250, 206, 36, 0.6)",
+    boxShadow: "0 6px 20px rgba(250, 206, 36, 0.4)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    position: "relative",
-    overflow: "hidden",
+    whiteSpace: "nowrap",
   },
   addButtonIcon: {
     marginRight: "12px",
     fontSize: "18px",
   },
+  // ✅ Fixed grid - prevents stretching with single item
   ridersGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(350px, 350px))", // ✅ Fixed width
     gap: "24px",
+    justifyContent: "start", // ✅ Align left instead of stretch
   },
   riderCard: {
     background:
@@ -97,11 +102,12 @@ const styles = {
     flexDirection: "column",
     cursor: "pointer",
     transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+    width: "100%", // ✅ Fill grid cell
   },
   riderHeader: {
     display: "flex",
     alignItems: "center",
-    margin: "0 0 12px 0",
+    gap: "16px",
   },
   riderAvatar: {
     width: "48px",
@@ -114,50 +120,66 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: "18px",
+    flexShrink: 0,
   },
   riderInfo: {
     flex: 1,
+    minWidth: 0, // ✅ Prevent text overflow
   },
   riderName: {
     fontSize: "20px",
     fontWeight: "700",
     color: "#fff",
-    marginBottom: "2px",
+    marginBottom: "4px",
     letterSpacing: "-0.025em",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   riderMobile: {
     fontSize: "14px",
     color: "#94a3b8",
   },
   riderStatItem: {
-    textAlign: "center",
-    padding: "8px 16px",
-    background: "rgba(15, 23, 42, 0.5)",
+    padding: "6px 14px",
+    background: "rgba(15, 23, 42, 0.6)",
     borderRadius: "8px",
-    border: "1px solid rgba(148, 163, 184, 0.05)",
-    color: "#fff",
+    border: "1px solid rgba(148, 163, 184, 0.15)",
+    color: "#10b981",
     fontWeight: "600",
-    fontSize: "14px",
-    alignSelf: "flex-end",
+    fontSize: "13px",
+    flexShrink: 0,
   },
   emptyState: {
     textAlign: "center",
-    padding: "60px 40px",
+    padding: "80px 40px",
     color: "#94a3b8",
   },
   emptyIcon: {
-    fontSize: "48px",
+    fontSize: "64px",
     marginBottom: "16px",
+    opacity: 0.6,
+  },
+  emptyTitle: {
+    fontSize: "22px",
+    fontWeight: "600",
+    color: "#e2e8f0",
+    marginBottom: "8px",
+  },
+  emptyDescription: {
+    fontSize: "16px",
+    color: "#94a3b8",
   },
 };
 
 function getInitials(name) {
-  return name
-    .split(" ")
-    .map((seg) => seg[0].toUpperCase())
-    .join("")
-    .slice(0, 2);
+  return (
+    name
+      .split(" ")
+      .map((seg) => seg[0]?.toUpperCase() || "")
+      .join("")
+      .slice(0, 2) || "R"
+  );
 }
 
 function RiderManagment() {
@@ -178,7 +200,6 @@ function RiderManagment() {
       }
     } catch (error) {
       console.error("Error fetching riders: ", error);
-      // Optionally show toast here for error
     }
   };
 
@@ -202,30 +223,7 @@ function RiderManagment() {
               View all registered riders in your delivery team
             </p>
           </div>
-          <button
-            style={styles.addButton}
-            onClick={() => {
-              navigate("/add-rider");
-            }}
-          >
-            <span style={styles.addButtonIcon}>+</span> Add New Rider
-          </button>
-
-          <button
-            style={styles.riderButton}
-            onClick={() => setIsActive(!isActive)}
-          >
-            {isActive ? "Show Pending Riders" : "Show Active Riders"}
-          </button>
-        </div>
-
-        {filteredRiders.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>👥</div>
-            <h3 style={styles.emptyTitle}>No Riders Found</h3>
-            <p style={styles.emptyDescription}>
-              Start by adding riders to your delivery team
-            </p>
+          <div style={styles.buttonGroup}>
             <button
               style={styles.addButton}
               onClick={() => {
@@ -234,6 +232,25 @@ function RiderManagment() {
             >
               <span style={styles.addButtonIcon}>+</span> Add New Rider
             </button>
+
+            <button
+              style={styles.riderButton}
+              onClick={() => setIsActive(!isActive)}
+            >
+              {isActive ? "Show Pending Riders" : "Show Active Riders"}
+            </button>
+          </div>
+        </div>
+
+        {filteredRiders.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>👥</div>
+            <h3 style={styles.emptyTitle}>No Riders Found</h3>
+            <p style={styles.emptyDescription}>
+              {isActive
+                ? "No active riders in the system"
+                : "No pending riders at the moment"}
+            </p>
           </div>
         ) : (
           <div style={styles.ridersGrid}>
@@ -251,9 +268,7 @@ function RiderManagment() {
                     <div style={styles.riderName}>{rider.name}</div>
                     <div style={styles.riderMobile}>{rider.mobileNumber}</div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <div style={styles.riderStatItem}>RIDER</div>
-                  </div>
+                  <div style={styles.riderStatItem}>RIDER</div>
                 </div>
               </div>
             ))}

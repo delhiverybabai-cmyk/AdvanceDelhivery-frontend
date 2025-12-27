@@ -3,6 +3,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import WipBulkDispatchModel from "../BulkManagment/WipBulkDispatchModel";
+import AddVehicleModal from "./AddVehicleModal";
 
 const styles = {
   // ... (keep all your existing styles)
@@ -166,6 +167,7 @@ const styles = {
 function LiveDispatch() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
 
   const [activeTab, setActiveTab] = useState("open");
@@ -348,12 +350,56 @@ console.log(response.data.responses);
       <ToastContainer position="top-right" autoClose={5000} />
       <main style={styles.main}>
         <div style={styles.headerSection}>
-          <div>
-            <h2 style={styles.mainTitle}>Live Dispatches</h2>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
             <div style={styles.subtitle}>
+              <h2 style={styles.mainTitle}>Live Dispatches</h2>
               Current {activeTab === "open" ? "open" : "WIP"} dispatch trips and
               their details.
             </div>
+            <button
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "linear-gradient(135deg, #ee1c25 0%, #c41e3a 100%)",
+                color: "#ffffff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "8px",
+                fontSize: "15px",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 12px rgba(238, 28, 37, 0.3)",
+                letterSpacing: "0.3px",
+                height:'50px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 20px rgba(238, 28, 37, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(238, 28, 37, 0.3)";
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+              onClick={()=>{
+                setIsVehicleModalOpen(true);
+              }}
+            >
+              <span style={{ fontSize: "18px", fontWeight: 700 }}>+</span>
+              Add Vehicle
+            </button>
           </div>
         </div>
 
@@ -419,6 +465,7 @@ console.log(response.data.responses);
                       <th style={styles.th}>Copy Detail</th>
                       <th style={styles.th}>View Detail</th>
                       <th style={styles.th}>Scan Undelivered</th>
+                      <th style={styles.th}>EOD</th>
                     </>
                   ) : (
                     <>
@@ -496,6 +543,22 @@ console.log(response.data.responses);
                             Scan & Copy
                           </button>
                         </td>
+                        <td style={styles.td}>
+                          <button
+                            style={styles.copyBtn}
+                            onClick={() =>
+                              window.open(
+                                `https://last-mile.delhivery.com/#/lm/dispatch/${
+                                  disp.id ?? disp._id
+                                }/eod`,
+                                "_blank",
+                                "noopener,noreferrer"
+                              )
+                            }
+                          >
+                            Redirect EOD
+                          </button>
+                        </td>
                       </>
                     ) : (
                       <>
@@ -529,6 +592,11 @@ console.log(response.data.responses);
         onClose={() => setShowModal(false)}
         dispatch={selectedDispatch}
         fetchDispatchesByTab={fetchDispatchesByTab}
+      />
+
+      <AddVehicleModal
+        isOpen={isVehicleModalOpen}
+        onClose={() => setIsVehicleModalOpen(false)}
       />
     </div>
   );
