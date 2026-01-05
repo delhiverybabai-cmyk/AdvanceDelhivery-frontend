@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import WipBulkDispatchModel from "../BulkManagment/WipBulkDispatchModel";
 import AddVehicleModal from "./AddVehicleModal";
+import NotAttemptModal from "./NotAttemptModal";
 
 const styles = {
   // ... (keep all your existing styles)
@@ -168,6 +169,7 @@ function LiveDispatch() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
    const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+   const [isNotAttemptModalOpen, setIsNotAttemptModalOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
 
   const [activeTab, setActiveTab] = useState("open");
@@ -362,44 +364,92 @@ console.log(response.data.responses);
               Current {activeTab === "open" ? "open" : "WIP"} dispatch trips and
               their details.
             </div>
-            <button
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "linear-gradient(135deg, #ee1c25 0%, #c41e3a 100%)",
-                color: "#ffffff",
-                border: "none",
-                padding: "12px 24px",
-                borderRadius: "8px",
-                fontSize: "15px",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: "0 4px 12px rgba(238, 28, 37, 0.3)",
-                letterSpacing: "0.3px",
-                height:'50px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(238, 28, 37, 0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(238, 28, 37, 0.3)";
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-              onClick={()=>{
-                setIsVehicleModalOpen(true);
-              }}
-            >
-              <span style={{ fontSize: "18px", fontWeight: 700 }}>+</span>
-              Add Vehicle
-            </button>
+            <div>
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background:
+                    "linear-gradient(135deg, #FF832B 0%, #FF9D52 100%)",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(255, 131, 43, 0.4)",
+                  letterSpacing: "0.3px",
+                  height: "50px",
+                  marginRight: "10px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(255, 131, 43, 0.5)";
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, #FF9D52 0%, #FFB878 100%)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(255, 131, 43, 0.4)";
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, #FF832B 0%, #FF9D52 100%)";
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+                onClick={() => {
+                  setIsNotAttemptModalOpen(true);
+                }}
+              >
+                <span style={{ fontSize: "18px", fontWeight: 700 }}>+</span>
+                Not Attempt
+              </button>
+
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background:
+                    "linear-gradient(135deg, #ee1c25 0%, #c41e3a 100%)",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(238, 28, 37, 0.3)",
+                  letterSpacing: "0.3px",
+                  height: "50px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(238, 28, 37, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(238, 28, 37, 0.3)";
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+                onClick={() => {
+                  setIsVehicleModalOpen(true);
+                }}
+              >
+                <span style={{ fontSize: "18px", fontWeight: 700 }}>+</span>
+                Add Vehicle
+              </button>
+            </div>
           </div>
         </div>
 
@@ -456,14 +506,14 @@ console.log(response.data.responses);
                 <tr>
                   <th style={styles.th}>FE Name</th>
                   <th style={styles.th}>Dispatch ID</th>
-                  <th style={styles.th}>Status</th>
+                  {/* <th style={styles.th}>Status</th> */}
                   <th style={styles.th}>Employee ID</th>
                   <th style={styles.th}>FE Phone</th>
                   <th style={styles.th}>Vehicle Type</th>
                   {activeTab !== "wip" ? (
                     <>
                       <th style={styles.th}>Copy Detail</th>
-                      <th style={styles.th}>View Detail</th>
+                      {/* <th style={styles.th}>View Detail</th> */}
                       <th style={styles.th}>Scan Undelivered</th>
                       <th style={styles.th}>EOD</th>
                     </>
@@ -486,11 +536,11 @@ console.log(response.data.responses);
                   >
                     <td style={styles.td}>{disp.dispatch_fe?.name ?? "-"}</td>
                     <td style={styles.td}>{disp.id ?? disp._id}</td>
-                    <td style={styles.td}>
+                    {/* <td style={styles.td}>
                       <span style={getStatusStyle(disp.status)}>
                         {disp.status ?? "Unknown"}
                       </span>
-                    </td>
+                    </td> */}
                     <td style={styles.td}>
                       {disp.dispatch_fe?.employee_id ?? "-"}
                     </td>
@@ -518,7 +568,7 @@ console.log(response.data.responses);
                             <span style={styles.copiedMsg}>Copied!</span>
                           )}
                         </td>
-                        <td style={styles.td}>
+                        {/* <td style={styles.td}>
                           <button
                             style={styles.actionBtn}
                             onClick={(e) => {
@@ -528,7 +578,7 @@ console.log(response.data.responses);
                           >
                             View
                           </button>
-                        </td>
+                        </td> */}
                         <td style={styles.td}>
                           <button
                             style={{
@@ -597,6 +647,11 @@ console.log(response.data.responses);
       <AddVehicleModal
         isOpen={isVehicleModalOpen}
         onClose={() => setIsVehicleModalOpen(false)}
+      />
+
+      <NotAttemptModal
+        isOpen={isNotAttemptModalOpen}
+        onClose={() => setIsNotAttemptModalOpen(false)}
       />
     </div>
   );
