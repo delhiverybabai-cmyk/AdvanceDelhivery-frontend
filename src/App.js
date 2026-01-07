@@ -11,6 +11,7 @@ import BulkGenricIncoming from "./components/BulkManagment/BulkGenricIncoming";
 import RTConnection from "./components/FlowManagment/RTConnection";
 import CSEscalation from "./components/FlowManagment/CSEscalation";
 import WaybillForamater from "./components/FlowManagment/WaybillForamater";
+import PickupStatusPage from "./components/LiveDispatch/PickupStatusPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="rt-connection" element={<RTConnection />} />
           <Route path="cs-escalation" element={<CSEscalation />} />
           <Route path="waybill-formater" element={<WaybillForamater />} />
+          <Route path="pickup-qc-status" element={<PickupStatusPage />} />
         </Route>
       </Routes>
     </Router>

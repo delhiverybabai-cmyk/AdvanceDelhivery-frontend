@@ -6,6 +6,7 @@ const navItems = [
   { path: "/live-dispatch", label: "Live Dispatch" },
   { path: "/rider-management", label: "Rider Management" },
   { path: "/token-management", label: "Token Management" },
+  { path: "/pickup-qc-status", label: "Pickup QC Status" },
 ];
 
 const styles = {

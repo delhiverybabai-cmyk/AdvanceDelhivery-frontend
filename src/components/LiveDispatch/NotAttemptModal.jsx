@@ -118,7 +118,7 @@ const NotAttemptModal = ({ isOpen, onClose }) => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        } 
       );
 
       if (response.data.success) {
