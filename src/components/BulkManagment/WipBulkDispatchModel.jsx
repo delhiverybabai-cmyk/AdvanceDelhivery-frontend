@@ -17,7 +17,8 @@ const styles = {
     backdropFilter: "blur(4px)",
   },
   modal: {
-    background: "linear-gradient(145deg, rgba(17,24,39,0.98) 0%, rgba(30,41,59,0.95) 100%)",
+    background:
+      "linear-gradient(145deg, rgba(17,24,39,0.98) 0%, rgba(30,41,59,0.95) 100%)",
     borderRadius: "16px",
     border: "1px solid rgba(148,163,184,0.2)",
     padding: "28px",
@@ -110,10 +111,15 @@ const styles = {
     padding: "8px 4px",
     background: "rgba(148,163,184,0.1)",
     borderRadius: "6px",
-  }
+  },
 };
 
-const WipBulkDispatchModel = ({ isOpen, onClose, dispatch,fetchDispatchesByTab }) => {
+const WipBulkDispatchModel = ({
+  isOpen,
+  onClose,
+  dispatch,
+  fetchDispatchesByTab,
+}) => {
   const [dispatchDetail, setDispatchDetail] = useState("");
   const [dispatchId, setDispatchId] = useState("");
   const [waybillsArray, setWaybillsArray] = useState(""); // JSON array string
@@ -132,13 +138,13 @@ const WipBulkDispatchModel = ({ isOpen, onClose, dispatch,fetchDispatchesByTab }
   const handleSubmit = async () => {
     let wbnsArray;
     try {
-            if (!dispatchId) {
-              toast.error("Dispatch ID is required.");
-              return;
-            }
+      if (!dispatchId) {
+        toast.error("Dispatch ID is required.");
+        return;
+      }
       // Parse JSON array
       wbnsArray = JSON.parse(waybillsArray);
-      
+
       // Validate it's an array of strings
       if (!Array.isArray(wbnsArray)) {
         toast.error("Waybills must be a valid JSON array.");
@@ -148,19 +154,19 @@ const WipBulkDispatchModel = ({ isOpen, onClose, dispatch,fetchDispatchesByTab }
         toast.error("Array cannot be empty.");
         return;
       }
-      if (!wbnsArray.every(wb => typeof wb === 'string' && wb.trim())) {
+      if (!wbnsArray.every((wb) => typeof wb === "string" && wb.trim())) {
         toast.error("All waybills must be non-empty strings.");
         return;
       }
     } catch (error) {
-      toast.error("Invalid JSON format. Use: [\"waybill1\",\"waybill2\"]");
+      toast.error('Invalid JSON format. Use: ["waybill1","waybill2"]');
       return;
     }
 
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/dispatch/bulk-dispatch",
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/bulk-dispatch`,
         {
           dispatch_id: parseInt(dispatchId),
           action: "add_packages",
@@ -194,7 +200,9 @@ const WipBulkDispatchModel = ({ isOpen, onClose, dispatch,fetchDispatchesByTab }
     <div style={styles.modalOverlay} onClick={onClose}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>`Dispatch ID Of {dispatchDetail?.dispatch_fe?.name}`</label>
+          <label style={styles.label}>
+            `Dispatch ID Of {dispatchDetail?.dispatch_fe?.name}`
+          </label>
           <input
             style={{
               ...styles.input,

@@ -112,13 +112,13 @@ const NotAttemptModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.patch(
-        "http://localhost:5000/api/dispatch/update-package-status",
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/update-package-status`,
         formData,
         {
           headers: {
             "Content-Type": "application/json",
           },
-        } 
+        }
       );
 
       if (response.data.success) {

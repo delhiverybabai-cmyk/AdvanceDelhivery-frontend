@@ -106,7 +106,7 @@ export default function TokenManagement() {
     setIsLoading(true);
     try {
       const resp = await axios.put(
-        "http://localhost:5000/api/dispatch/token-update",
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/token-update`,
         {
           token,
           cookieToken: cookieToken.trim() || undefined, // ✅ Send cookieToken if provided
@@ -138,7 +138,7 @@ export default function TokenManagement() {
     setIsLoading(true);
     try {
       const resp = await axios.post(
-        "http://localhost:5000/api/auth/send-otp",
+        `${process.env.REACT_APP_BASE_URL}/api/auth/send-otp`,
         {
           number,
           cookieToken: cookieToken.trim() || undefined, // ✅ Send cookieToken if provided
@@ -168,7 +168,7 @@ export default function TokenManagement() {
     setIsLoading(true);
     try {
       const resp = await axios.post(
-        "http://localhost:5000/api/auth/auth-otp-login",
+        `${process.env.REACT_APP_BASE_URL}/api/auth/auth-otp-login`,
         {
           number,
           otp,

@@ -93,22 +93,28 @@ const DispatchDetail = () => {
   const [scanDone, setScanDone] = useState(false);
   const [scanning, setScanning] = useState(false);
 
-  const undeliveredWaybills = [...dispatchData.responses?.undelivered,...dispatchData.responses?.pickup] || [];
+  const undeliveredWaybills =
+    [
+      ...dispatchData.responses?.undelivered,
+      ...dispatchData.responses?.pickup,
+    ] || [];
 
   const handleCopy = async (dispatch_id) => {
-  try {
-    const response = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatch_id}`,
-      {},
-      { headers: { "Content-Type": "application/json" } }
-    );
-    await navigator.clipboard.writeText(JSON.stringify(response.data, null, 2));
-    toast.success("Dispatch details copied to clipboard!");
-  } catch (error) {
-    toast.error("Failed to copy dispatch details.");
-    console.error("Failed to copy dispatch details.", error);
-  }
-};
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatch_id}`,
+        {},
+        { headers: { "Content-Type": "application/json" } }
+      );
+      await navigator.clipboard.writeText(
+        JSON.stringify(response.data, null, 2)
+      );
+      toast.success("Dispatch details copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy dispatch details.");
+      console.error("Failed to copy dispatch details.", error);
+    }
+  };
 
   const scanUndelivered = async () => {
     if (undeliveredWaybills.length === 0) {
@@ -119,7 +125,7 @@ const DispatchDetail = () => {
     try {
       handleCopy(dispatchData.dispatch_id);
       const response = await axios.put(
-        `http://localhost:5000/api/dispatch/scan-undelivered/${dispatchData.dispatch_id}`,
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/scan-undelivered/${dispatchData.dispatch_id}`,
         { waybills: undeliveredWaybills },
         { headers: { "Content-Type": "application/json" } }
       );

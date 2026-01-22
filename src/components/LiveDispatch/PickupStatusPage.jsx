@@ -225,7 +225,7 @@ const PickupStatusPage = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/dispatch/fetch-pickup-status",
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/fetch-pickup-status`,
         {
           headers: { "Content-Type": "application/json" },
         }

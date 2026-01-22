@@ -6,7 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 const AddNewRider = () => {
   const [formData, setFormData] = useState({
     name: "",
-    mobileNumber: "",
+    mobileNumbers: [""], // Array to store multiple numbers
+    feEmployeeId: "",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -74,6 +75,46 @@ const AddNewRider = () => {
       outline: "none",
       boxSizing: "border-box",
     },
+    mobileNumberRow: {
+      display: "flex",
+      gap: "12px",
+      alignItems: "center",
+      marginBottom: "12px",
+    },
+    mobileInput: {
+      flex: 1,
+      padding: "14px 18px",
+      fontSize: "16px",
+      fontWeight: "500",
+      color: "#fff",
+      backgroundColor: "rgba(15,23,42,0.6)",
+      border: "1px solid rgba(148,163,184,0.22)",
+      borderRadius: "10px",
+      outline: "none",
+      boxSizing: "border-box",
+    },
+    addButton: {
+      padding: "14px 20px",
+      fontSize: "14px",
+      fontWeight: "600",
+      color: "#baed4dff",
+      background: "rgba(186,237,77,0.1)",
+      border: "1px solid rgba(186,237,77,0.3)",
+      borderRadius: "10px",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    },
+    removeButton: {
+      padding: "14px 20px",
+      fontSize: "14px",
+      fontWeight: "600",
+      color: "#ef4444",
+      background: "rgba(239,68,68,0.1)",
+      border: "1px solid rgba(239,68,68,0.3)",
+      borderRadius: "10px",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    },
     buttonGroup: {
       display: "flex",
       gap: "16px",
@@ -122,10 +163,15 @@ const AddNewRider = () => {
       alignItems: "center",
       gap: "10px",
     },
+    helperText: {
+      fontSize: "12px",
+      color: "#94a3b8",
+      marginTop: "6px",
+      fontStyle: "italic",
+    },
   };
 
   function validateInputs() {
-    // Manual validation with toast feedback
     if (!formData.name.trim()) {
       toast.error("Name is required");
       return false;
@@ -134,12 +180,39 @@ const AddNewRider = () => {
       toast.error("Name must be at least 2 characters long");
       return false;
     }
-    if (!formData.mobileNumber.trim()) {
-      toast.error("Mobile number is required");
+
+    // Validate at least one mobile number
+    const validNumbers = formData.mobileNumbers.filter(
+      (num) => num.trim() !== ""
+    );
+    if (validNumbers.length === 0) {
+      toast.error("At least one mobile number is required");
       return false;
     }
-    if (!/^\+91\d{10}$/.test(formData.mobileNumber.trim())) {
-      toast.error("Enter a valid mobile number with +91 prefix");
+
+    // Validate each mobile number format
+    for (let i = 0; i < validNumbers.length; i++) {
+      if (!/^\+91\d{10}$/.test(validNumbers[i].trim())) {
+        toast.error(
+          `Mobile number ${i + 1} is invalid. Use format: +91xxxxxxxxxx`
+        );
+        return false;
+      }
+    }
+
+    // Check for duplicate mobile numbers
+    const uniqueNumbers = new Set(validNumbers.map((n) => n.trim()));
+    if (uniqueNumbers.size !== validNumbers.length) {
+      toast.error("Duplicate mobile numbers are not allowed");
+      return false;
+    }
+
+    // FE Employee ID is optional but validate format if provided
+    if (
+      formData.feEmployeeId.trim() &&
+      formData.feEmployeeId.trim().length < 3
+    ) {
+      toast.error("FE Employee ID must be at least 3 characters");
       return false;
     }
     return true;
@@ -154,32 +227,79 @@ const AddNewRider = () => {
     if (success) setSuccess(false);
   };
 
+  const handleMobileNumberChange = (index, value) => {
+    const updatedNumbers = [...formData.mobileNumbers];
+    updatedNumbers[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      mobileNumbers: updatedNumbers,
+    }));
+    if (success) setSuccess(false);
+  };
+
+  const addMobileNumber = () => {
+    if (formData.mobileNumbers.length >= 5) {
+      toast.warning("Maximum 5 mobile numbers allowed");
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      mobileNumbers: [...prev.mobileNumbers, ""],
+    }));
+  };
+
+  const removeMobileNumber = (index) => {
+    if (formData.mobileNumbers.length === 1) {
+      toast.warning("At least one mobile number field is required");
+      return;
+    }
+    const updatedNumbers = formData.mobileNumbers.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      mobileNumbers: updatedNumbers,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateInputs()) return;
     setLoading(true);
 
     try {
+      // Filter out empty mobile numbers and trim
+      const validMobileNumbers = formData.mobileNumbers
+        .filter((num) => num.trim() !== "")
+        .map((num) => num.trim());
+
+      const payload = {
+        name: formData.name.trim(),
+        mobileNumber: validMobileNumbers, // Send as array
+      };
+
+      // Only include feEmployeeId if provided
+      if (formData.feEmployeeId.trim()) {
+        payload.feEmployeeId = formData.feEmployeeId.trim();
+      }
+
       const response = await axios.post(
         `${process.env.REACT_APP_BASE_URL}/api/rider/create-rider`,
-        {
-          name: formData.name.trim(),
-          mobileNumber: formData.mobileNumber.trim(),
-        },
+        payload,
         {
           headers: { "Content-Type": "application/json" },
         }
       );
       setLoading(false);
       setSuccess(true);
-      setFormData({ name: "", mobileNumber: "" });
+      setFormData({ name: "", mobileNumbers: [""], feEmployeeId: "" });
       toast.success("Rider added successfully!");
     } catch (error) {
       setLoading(false);
       if (error.response?.status === 409) {
-        toast.error("A rider with this mobile number already exists");
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+        toast.error(
+          "A rider with this mobile number or FE Employee ID already exists"
+        );
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
       } else {
         toast.error("Failed to add rider. Please try again.");
       }
@@ -187,7 +307,7 @@ const AddNewRider = () => {
   };
 
   const handleCancel = () => {
-    setFormData({ name: "", mobileNumber: "" });
+    setFormData({ name: "", mobileNumbers: [""], feEmployeeId: "" });
     setSuccess(false);
   };
 
@@ -227,21 +347,67 @@ const AddNewRider = () => {
                 disabled={loading}
               />
             </div>
+
             <div style={styles.formGroup}>
-              <label htmlFor="mobileNumber" style={styles.label}>
-                Mobile Number *
+              <label style={styles.label}>Mobile Numbers *</label>
+              {formData.mobileNumbers.map((number, index) => (
+                <div key={index} style={styles.mobileNumberRow}>
+                  <input
+                    type="text"
+                    value={number}
+                    onChange={(e) =>
+                      handleMobileNumberChange(index, e.target.value)
+                    }
+                    style={styles.mobileInput}
+                    placeholder="+91xxxxxxxxxx"
+                    maxLength="13"
+                    disabled={loading}
+                  />
+                  {formData.mobileNumbers.length > 1 && (
+                    <button
+                      type="button"
+                      style={styles.removeButton}
+                      onClick={() => removeMobileNumber(index)}
+                      disabled={loading}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  {index === formData.mobileNumbers.length - 1 &&
+                    formData.mobileNumbers.length < 5 && (
+                      <button
+                        type="button"
+                        style={styles.addButton}
+                        onClick={addMobileNumber}
+                        disabled={loading}
+                      >
+                        + Add
+                      </button>
+                    )}
+                </div>
+              ))}
+              <div style={styles.helperText}>
+                Add up to 5 mobile numbers for this rider
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label htmlFor="feEmployeeId" style={styles.label}>
+                FE Employee ID
               </label>
               <input
                 type="text"
-                id="mobileNumber"
-                name="mobileNumber"
-                value={formData.mobileNumber}
+                id="feEmployeeId"
+                name="feEmployeeId"
+                value={formData.feEmployeeId}
                 onChange={handleInputChange}
                 style={styles.input}
-                placeholder="+91xxxxxxxxxx"
-                maxLength="13"
+                placeholder="Enter employee ID (optional)"
                 disabled={loading}
               />
+              <div style={styles.helperText}>
+                Optional: Unique Field Executive employee identifier
+              </div>
             </div>
             <div style={styles.buttonGroup}>
               <button
@@ -254,10 +420,13 @@ const AddNewRider = () => {
               </button>
               <button
                 type="submit"
-                style={styles.submitButton}
+                style={{
+                  ...styles.submitButton,
+                  ...(loading ? styles.submitButtonDisabled : {}),
+                }}
                 disabled={loading}
               >
-                Add Rider
+                {loading ? "Adding..." : "Add Rider"}
               </button>
             </div>
           </form>

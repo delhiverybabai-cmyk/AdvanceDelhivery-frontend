@@ -292,7 +292,7 @@ function BulkGIGenerator() {
 
         try {
           const response = await axios.post(
-            "http://localhost:5000/api/flow/single-gi",
+            `${process.env.REACT_APP_BASE_URL}/api/flow/single-gi`,
             { ref_ids: refId },
             {
               headers: { "Content-Type": "application/json" },

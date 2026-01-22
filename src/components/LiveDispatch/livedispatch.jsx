@@ -168,8 +168,8 @@ const styles = {
 function LiveDispatch() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-   const [isNotAttemptModalOpen, setIsNotAttemptModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isNotAttemptModalOpen, setIsNotAttemptModalOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
 
   const [activeTab, setActiveTab] = useState("open");
@@ -222,7 +222,7 @@ function LiveDispatch() {
   //   try {
   //     handleCopy(dispatchData.dispatch_id);
   //     const response = await axios.put(
-  //       `http://localhost:5000/api/dispatch/scan-undelivered/${dispatchData.dispatch_id}`,
+  //      `${process.env.REACT_APP_BASE_URL}/api/dispatch/scan-undelivered/${dispatchData.dispatch_id}`,
   //       { waybills: undeliveredWaybills },
   //       { headers: { "Content-Type": "application/json" } }
   //     );
@@ -240,15 +240,15 @@ function LiveDispatch() {
   //   }
   // };
 
-  const ScanAndCopyHanler = async (disp)=>{
+  const ScanAndCopyHanler = async (disp) => {
     try {
       undeliverScan(disp);
-      console.log(disp,"Scan displying")
+      console.log(disp, "Scan displying");
       // scanUndelivered(disp);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   // ✅ Handle tab switch with fetch
   const handleTabSwitch = (tab) => {
@@ -262,45 +262,43 @@ function LiveDispatch() {
     fetchDispatchesByTab("wip");
   }, []);
 
-  
-
   const currentDispatches =
     activeTab === "open" ? openDispatches : wipDispatches;
 
-     const undeliverScan = async (disp) => {
-       try {
-         const dispatchId = disp.id ?? disp._id;
-         const response = await axios.get(
-           `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatchId}`,
-           { headers: { "Content-Type": "application/json" } }
-         );
-         await navigator.clipboard.writeText(
-           JSON.stringify(response.data, null, 2)
-         );
-        
-         toast.success("Dispatch details copied to clipboard!");
-        // await setTimeout(() => setCopiedId(null), 500);
-console.log(response.data.responses);
-        const UndeliverResponse = await axios.put(
-          `http://localhost:5000/api/dispatch/scan-undelivered/${dispatchId}`,
-          {
-            waybills: [
-              ...response.data.responses.undelivered,
-              ...response.data.responses.pickup,
-            ],
-          },
-          { headers: { "Content-Type": "application/json" } }
-        );
-              if (response.data.success) {
-                toast.success("Undelivered packages scanned successfully!");
-              } else {
-                toast.error("Failed to scan undelivered packages.");
-              }
-       } catch (error) {
-         toast.error("Failed to copy dispatch details.");
-         console.error("Failed to copy dispatch details.", error);
-       }
-     };
+  const undeliverScan = async (disp) => {
+    try {
+      const dispatchId = disp.id ?? disp._id;
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatchId}`,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      await navigator.clipboard.writeText(
+        JSON.stringify(response.data, null, 2)
+      );
+
+      toast.success("Dispatch details copied to clipboard!");
+      // await setTimeout(() => setCopiedId(null), 500);
+      console.log(response.data.responses);
+      const UndeliverResponse = await axios.put(
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/scan-undelivered/${dispatchId}`,
+        {
+          waybills: [
+            ...response.data.responses.undelivered,
+            ...response.data.responses.pickup,
+          ],
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      if (response.data.success) {
+        toast.success("Undelivered packages scanned successfully!");
+      } else {
+        toast.error("Failed to scan undelivered packages.");
+      }
+    } catch (error) {
+      toast.error("Failed to copy dispatch details.");
+      console.error("Failed to copy dispatch details.", error);
+    }
+  };
 
   const handleCopy = async (disp) => {
     try {

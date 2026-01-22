@@ -105,7 +105,7 @@ const AddVehicleModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/flow/add-vehicle-info",
+        `${process.env.REACT_APP_BASE_URL}/api/flow/add-vehicle-info`,
         {
           driver_name: formData.driver_name.trim(),
           vehicle_number: formData.vehicle_number.replace(/\s/g, ""),
