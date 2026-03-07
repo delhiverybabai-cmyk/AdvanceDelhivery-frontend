@@ -224,6 +224,11 @@ function LiveDispatch() {
   const [loading, setLoading] = useState(false); // Changed to false initially
   const [copiedId, setCopiedId] = useState(null);
 
+  // Direct EOD Modal State
+  const [isDirectEODModalOpen, setIsDirectEODModalOpen] = useState(false);
+  const [selectedEODRider, setSelectedEODRider] = useState("");
+  const [eodProcessing, setEodProcessing] = useState(false);
+
   // ✅ Fetch ONLY on tab switch
   const fetchDispatchesByTab = async (tab) => {
     setLoading(true);
@@ -456,6 +461,48 @@ function LiveDispatch() {
     await handleForceStatus(null, "parcel", true);
     // Then run it for pickups
     await handleForceStatus(null, "pickup", true);
+  };
+
+  const handleDirectEODSubmit = async () => {
+    if (!selectedEODRider) {
+      toast.error("Please select a Rider");
+      return;
+    }
+
+    // Find the specific dispatch item for the selected rider
+    const dispatchForRider = currentDispatches.find(
+      (d) => d.dispatch_fe?.name === selectedEODRider
+    );
+
+    if (!dispatchForRider) {
+      toast.error("Could not find dispatch info for the selected Rider.");
+      return;
+    }
+
+    const dispatchId = dispatchForRider.id ?? dispatchForRider._id;
+
+    setEodProcessing(true);
+    try {
+      toast.info(`Initiating Direct EOD for ${selectedEODRider}...`);
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_URL}/api/dispatch/direct-eod/${dispatchId}`,
+        {},
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (response.data.success) {
+        toast.success(`Direct EOD completed for ${selectedEODRider}!`);
+        setIsDirectEODModalOpen(false);
+      } else {
+        toast.error(response.data.error || "Failed to complete Direct EOD.");
+      }
+    } catch (error) {
+      toast.error("Error processing Direct EOD.");
+      console.error(error);
+    } finally {
+      setEodProcessing(false);
+    }
   };
 
   // ===================================================================
@@ -734,6 +781,13 @@ function LiveDispatch() {
             >
               Scan Undelivered
             </button>
+
+            <button 
+              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"}}
+              onClick={() => setIsDirectEODModalOpen(true)}
+            >
+              Direct EOD
+            </button>
           </div>
         )}
 
@@ -887,6 +941,63 @@ function LiveDispatch() {
         isOpen={isNotAttemptModalOpen}
         onClose={() => setIsNotAttemptModalOpen(false)}
       />
+
+      {/* Direct EOD Modal */}
+      {isDirectEODModalOpen && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
+        }}>
+          <div style={{
+            background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+            border: "1px solid rgba(148,163,184,0.2)", borderRadius: "16px",
+            padding: "32px", width: "400px", maxWidth: "90%", boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+          }}>
+            <h2 style={{color: "#fff", margin: "0 0 20px 0", fontSize: "22px"}}>Direct EOD Process</h2>
+            <div style={{marginBottom: "20px"}}>
+              <label style={{display: "block", color: "#94a3b8", marginBottom: "8px", fontWeight: "600"}}>Select Rider</label>
+              <select 
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(148,163,184,0.3)",
+                  background: "rgba(15, 23, 42, 0.6)",
+                  color: "#fff",
+                  fontSize: "15px",
+                  outline: "none"
+                }}
+                value={selectedEODRider}
+                onChange={(e) => setSelectedEODRider(e.target.value)}
+              >
+                <option value="" disabled>-- Choose a Rider --</option>
+                {/* Extract unique FE names from current dispatches */}
+                {[...new Set(currentDispatches.map(d => d.dispatch_fe?.name).filter(Boolean))].map(riderName => (
+                  <option key={riderName} value={riderName}>{riderName}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{display: "flex", gap: "12px", justifyContent: "flex-end"}}>
+              <button 
+                style={{...styles.tabButton, background: "rgba(239, 68, 68, 0.2)", color: "#fca5a5"}}
+                onClick={() => setIsDirectEODModalOpen(false)}
+                disabled={eodProcessing}
+              >
+                Cancel
+              </button>
+              <button 
+                style={{...styles.actionBtn, background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", padding: "10px 24px"}}
+                onClick={handleDirectEODSubmit}
+                disabled={eodProcessing || !selectedEODRider}
+              >
+                {eodProcessing ? "Processing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
