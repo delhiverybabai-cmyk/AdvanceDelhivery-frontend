@@ -22,6 +22,7 @@ function App() {
           <Route path="rider-management" element={<RiderManagement />} />
           <Route path="add-rider" element={<AddNewRider />} />
           <Route path="live-dispatch" element={<LiveDispatch />} />
+          {/* <Route path="dispatch-history" element={<DispatchHistory />} /> */}
           <Route path="dispatch-details" element={<DispatchDetail />} />
           <Route path="token-management" element={<TokenManagement />} />
           <Route path="bulk-gi" element={<BulkGenricIncoming />} />

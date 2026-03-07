@@ -168,6 +168,8 @@ const styles = {
 function LiveDispatch() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [ undeliveredWaybills, setUndeliveredWaybills] = useState([]);
+  const [pickups, setpickups] = useState([]);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isNotAttemptModalOpen, setIsNotAttemptModalOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);

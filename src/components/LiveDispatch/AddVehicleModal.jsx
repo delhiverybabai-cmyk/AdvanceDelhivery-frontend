@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 const AddVehicleModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    vehicle_number: "",
+    vehicle_number: "MP05R3513", // ✅ Default vehicle number
     driver_name: "Ram", // ✅ Default driver name
     opening_kms: "0",
   });
@@ -17,7 +17,7 @@ const AddVehicleModal = ({ isOpen, onClose, onSuccess }) => {
   useEffect(() => {
     if (!isOpen) {
       setFormData({
-        vehicle_number: "",
+        vehicle_number: "MP05R3513",
         driver_name: "Ram",
         opening_kms: "0",
       });

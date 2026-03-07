@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 const navItems = [
   { path: "/", label: "Overview" },
   { path: "/live-dispatch", label: "Live Dispatch" },
+  { path: "/dispatch-history", label: "Dispatch History" },
   { path: "/rider-management", label: "Rider Management" },
   { path: "/token-management", label: "Token Management" },
   { path: "/pickup-qc-status", label: "Pickup QC Status" },
