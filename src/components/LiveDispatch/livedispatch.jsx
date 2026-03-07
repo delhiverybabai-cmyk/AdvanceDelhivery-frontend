@@ -163,6 +163,50 @@ const styles = {
     marginLeft: "8px",
     fontSize: "13px",
   },
+  actionBtnStacked: {
+    background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 97%)",
+    color: "#fff",
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    fontWeight: "600",
+    fontSize: "13px",
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    boxShadow: "0 2px 10px #3b82f658",
+    width: "100%",
+    marginBottom: "5px",
+    textAlign: "center"
+  },
+  actionBtnStackedGreen: {
+    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    color: "#fff",
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    fontWeight: "600",
+    fontSize: "13px",
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    boxShadow: "0 2px 10px #10b98158",
+    width: "100%",
+    marginBottom: "5px",
+    textAlign: "center"
+  },
+  actionBtnStackedRed: {
+    background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+    color: "#fff",
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    fontWeight: "600",
+    fontSize: "13px",
+    cursor: "pointer",
+    transition: "box-shadow 0.15s",
+    boxShadow: "0 2px 10px #ef444458",
+    width: "100%",
+    textAlign: "center"
+  },
 };
 
 function LiveDispatch() {
@@ -242,15 +286,179 @@ function LiveDispatch() {
   //   }
   // };
 
-  const ScanAndCopyHanler = async (disp) => {
+  // ===================== BULK FUNCTIONS ==============================
+
+  // Helper function to process all dispatches and extract specific waybills
+  const fetchAllPackageDetails = async (dispatches) => {
+    let allUndelivered = [];
+    let allPickups = [];
+
+    const fetchPromises = dispatches.map(async (disp) => {
+      try {
+        const dispatchId = disp.id ?? disp._id;
+        const response = await axios.get(
+          `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatchId}`,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        allUndelivered.push(...(response.data.responses?.undelivered || []));
+        allPickups.push(...(response.data.responses?.pickupNotCompleted || []));
+      } catch (err) {
+        console.error(`Failed fetching dispatch details for ${disp.id ?? disp._id}:`, err);
+      }
+    });
+
+    toast.info("Aggregating packages from all visible dispatches...", { autoClose: 2000 });
+    await Promise.all(fetchPromises);
+
+    return { allUndelivered, allPickups };
+  };
+
+  const handleBulkCopy = async (type) => {
+    if (!currentDispatches || currentDispatches.length === 0) {
+      toast.info("No dispatches available to copy from.");
+      return;
+    }
+
     try {
-      undeliverScan(disp);
-      console.log(disp, "Scan displying");
-      // scanUndelivered(disp);
+      const { allUndelivered, allPickups } = await fetchAllPackageDetails(currentDispatches);
+      
+      let targetWaybills = [];
+      if (type === "all") targetWaybills = [...allUndelivered, ...allPickups];
+      else if (type === "undelivered") targetWaybills = allUndelivered;
+      else if (type === "pickup") targetWaybills = allPickups;
+
+      if (targetWaybills.length === 0) {
+        toast.info(`No ${type} packages found to copy.`);
+        return;
+      }
+
+      await navigator.clipboard.writeText(JSON.stringify(targetWaybills));
+      toast.success(`${targetWaybills.length} ${type} waybills copied!`);
     } catch (error) {
-      console.log(error);
+       toast.error(`Error performing bulk copy for ${type}`);
+       console.error(error);
     }
   };
+
+  const handleBulkScanEOD = async () => {
+     if (!currentDispatches || currentDispatches.length === 0) {
+      toast.info("No dispatches available to scan.");
+      return;
+    }
+
+    try {
+      const { allUndelivered, allPickups } = await fetchAllPackageDetails(currentDispatches);
+      const allWaybills = [...allUndelivered, ...allPickups];
+
+      if (allWaybills.length === 0) {
+        toast.info("No packages found across all dispatches to scan.");
+        return;
+      }
+
+      toast.info(`Scanning ${allWaybills.length} undelivered & pickup packages...`);
+      
+      // Note: Because the endpoint requires a dispatch ID in the URL parameter, we will map through ALL 
+      // individual dispatches and hit the API individually for each one using their respective extracted waybills,
+      // rather than sending *all* to a single dispatch endpoint, which would fail.
+      
+      const scanPromises = currentDispatches.map(async (disp) => {
+        try {
+           const dispatchId = disp.id ?? disp._id;
+           // First Get its details
+           const response = await axios.get(
+              `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatchId}`,
+              { headers: { "Content-Type": "application/json" } }
+           );
+           
+           const waybills = [
+             ...(response.data.responses?.undelivered || []),
+             ...(response.data.responses?.pickupNotCompleted || [])
+           ];
+
+           if (waybills.length > 0) {
+              await axios.put(
+                `${process.env.REACT_APP_BASE_URL}/api/dispatch/scan-undelivered/${dispatchId}`,
+                { waybills: waybills },
+                { headers: { "Content-Type": "application/json" } }
+              );
+           }
+        } catch(err) {
+           console.error(`Failed to scan packages for dispatch ${disp.id ?? disp._id}:`, err);
+           throw err; // throw to be caught by Promise.allSettled later if we change logic, right now it crashes the map
+        }
+      });
+      
+      await Promise.allSettled(scanPromises);
+      toast.success("Bulk Scan EOD completed for all visible dispatches!");
+    } catch (error) {
+       toast.error("Error performing Bulk Scan EOD");
+       console.error(error);
+    }
+  };
+  
+  const handleForceStatus = async (disp, type, isBulkAll = false) => {
+    try {
+      let waybills = [];
+
+      // If disp is provided, it's a single dispatch action (legacy support if needed)
+      // If disp is null (from bulk all), we fetch all from currentDispatches
+      if (!disp && isBulkAll) {
+         const { allUndelivered, allPickups } = await fetchAllPackageDetails(currentDispatches);
+         waybills = type === "pickup" ? allPickups : allUndelivered;
+      } else {
+         const dispatchId = disp.id ?? disp._id;
+         const response = await axios.get(
+           `${process.env.REACT_APP_BASE_URL}/api/dispatch/dispatch-details/${dispatchId}`,
+           { headers: { "Content-Type": "application/json" } }
+         );
+         waybills = type === "pickup" 
+             ? response.data.responses.pickupNotCompleted 
+             : response.data.responses.undelivered;
+      }
+      
+      if (!waybills || waybills.length === 0) {
+        if (!isBulkAll) toast.info(`No ${type} packages found to force status.`);
+        return;
+      }
+
+      toast.info(`Updating ${waybills.length} ${type} packages...`);
+
+      const updateResponse = await axios.post(
+        `${process.env.REACT_APP_BASE_URL}/api/flow/consigne-unavailable`,
+        {
+          waybillIds: waybills,
+          type: type
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (updateResponse.data.success) {
+        toast.success(`Successfully updated ${updateResponse.data.successful || waybills.length} ${type} packages.`);
+        if (updateResponse.data.failed > 0) {
+           toast.warn(`${updateResponse.data.failed} packages failed to update.`);
+        }
+      } else {
+        toast.error(`Failed to force status for ${type}.`);
+      }
+    } catch (error) {
+      toast.error(`Error forcing status for ${type}.`);
+      console.error(error);
+    }
+  };
+
+  const handleBulkForceConsigneeAll = async () => {
+    if (!currentDispatches || currentDispatches.length === 0) {
+      toast.info("No dispatches available to process.");
+      return;
+    }
+    
+    // First run it for parcels
+    await handleForceStatus(null, "parcel", true);
+    // Then run it for pickups
+    await handleForceStatus(null, "pickup", true);
+  };
+
+  // ===================================================================
 
   // ✅ Handle tab switch with fetch
   const handleTabSwitch = (tab) => {
@@ -477,6 +685,58 @@ function LiveDispatch() {
           </button>
         </div>
 
+        {/* Bulk Actions Panel */}
+        {activeTab !== "wip" && ( // Assuming bulk actions apply only to open dispatches, though this can be removed to show in both
+          <div style={{
+            display: "flex", 
+            gap: "12px", 
+            marginBottom: "20px",
+            padding: "16px",
+            background: "rgba(30,41,59,0.8)",
+            borderRadius: "12px",
+            border: "1px solid rgba(148,163,184,0.2)",
+            flexWrap: "wrap",
+            alignItems: "center"
+          }}>
+            <span style={{color: "#94a3b8", fontWeight: "600", marginRight: "8px"}}>Bulk Actions (All Rows):</span>
+            
+            <button 
+              style={{...styles.copyBtn, padding: "10px 16px"}}
+              onClick={() => handleBulkCopy("all")}
+            >
+              Copy All
+            </button>
+
+            <button 
+              style={{...styles.copyBtn, padding: "10px 16px", background: "linear-gradient(90deg, #fceb9f 0%, #fcec8b 98%)"}}
+              onClick={() => handleBulkCopy("pickup")}
+            >
+              Copy Pickups
+            </button>
+
+            <button 
+              style={{...styles.copyBtn, padding: "10px 16px", background: "linear-gradient(90deg, #a7f3d0 0%, #6ee7b7 98%)"}}
+              onClick={() => handleBulkCopy("undelivered")}
+            >
+              Copy Undelivered
+            </button>
+
+            <button 
+              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)"}}
+              onClick={handleBulkScanEOD}
+            >
+              Scan EOD
+            </button>
+
+            <button 
+              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"}}
+              onClick={handleBulkForceConsigneeAll}
+            >
+              Scan Undelivered
+            </button>
+          </div>
+        )}
+
         <div style={styles.tableContainer}>
           {loading ? (
             <div
@@ -513,8 +773,6 @@ function LiveDispatch() {
                   {activeTab !== "wip" ? (
                     <>
                       <th style={styles.th}>Copy Detail</th>
-                      {/* <th style={styles.th}>View Detail</th> */}
-                      <th style={styles.th}>Scan Undelivered</th>
                       <th style={styles.th}>EOD</th>
                     </>
                   ) : (
@@ -552,6 +810,7 @@ function LiveDispatch() {
                         {disp.dispatch_vehicle?.vehicle_type ?? "-"}
                       </span>
                     </td>
+                    {/* Status/WIP row rendering (Unchanged below until Action column) */}
                     {activeTab !== "wip" ? (
                       <>
                         <td style={styles.td}>
@@ -562,36 +821,11 @@ function LiveDispatch() {
                               handleCopy(disp);
                             }}
                           >
-                            Copy
+                            Copy Detail
                           </button>
                           {copiedId === (disp.id ?? disp._id) && (
                             <span style={styles.copiedMsg}>Copied!</span>
                           )}
-                        </td>
-                        {/* <td style={styles.td}>
-                          <button
-                            style={styles.actionBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleView(disp);
-                            }}
-                          >
-                            View
-                          </button>
-                        </td> */}
-                        <td style={styles.td}>
-                          <button
-                            style={{
-                              ...styles.actionBtn,
-                              background:
-                                "linear-gradient(135deg, #1dd47fff 0%, #059669 100%)",
-                            }}
-                            onClick={(e) => {
-                              ScanAndCopyHanler(disp);
-                            }}
-                          >
-                            Scan & Copy
-                          </button>
                         </td>
                         <td style={styles.td}>
                           <button
