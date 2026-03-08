@@ -212,7 +212,7 @@ export default function DispatchHistory() {
                 {activeTab === "cash" ? (
                   ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Sort COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
                 ) : activeTab === "completed" ? (
-                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Status"].map(h => <th key={h} style={S.th}>{h}</th>)
+                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Sort COD", "Status"].map(h => <th key={h} style={S.th}>{h}</th>)
                 ) : (
                   ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Undelivered", "RVP Pending", "COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
                 )}
@@ -294,6 +294,7 @@ export default function DispatchHistory() {
                         </td>
                         <td style={S.td}><Num n={d.receivedCash} good /></td>
                         <td style={S.td}><Num n={d.receivedOnline} good /></td>
+                        <td style={S.td}>{d.sortCOD > 0 ? `₹${d.sortCOD}` : "—"}</td>
                         <td style={S.td}>
                           <span style={{ padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${STATUS_COLOR[d.status]}22`, color: STATUS_COLOR[d.status] ?? "#94a3b8", border: `1px solid ${STATUS_COLOR[d.status]}55` }}>
                             {STATUS_LABEL[d.status] || `State ${d.status}`}

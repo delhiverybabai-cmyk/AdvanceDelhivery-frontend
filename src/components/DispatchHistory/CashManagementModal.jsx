@@ -41,6 +41,7 @@ export default function CashManagementModal({ isOpen, onClose, dispatch }) {
         receivedCash: calculatedCash,
         cashDenominations: denominations,
         receivedOnline: onlineNum,
+        sortCOD: diff < 0 ? Math.abs(diff) : 0,
       });
       if (res.data.success) {
         toast.success("✅ Cash Details Saved", { autoClose: 2500 });

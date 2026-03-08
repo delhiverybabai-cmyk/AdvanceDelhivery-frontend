@@ -5,6 +5,7 @@ import axios from "axios";
 const BASE = process.env.REACT_APP_BASE_URL;
 
 export default function CompleteCashModal({ isOpen, onClose, dispatch }) {
+  const [createSortCOD, setCreateSortCOD] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen || !dispatch) return null;
@@ -21,7 +22,7 @@ export default function CompleteCashModal({ isOpen, onClose, dispatch }) {
     setSubmitting(true);
     try {
       const res = await axios.post(`${BASE}/api/rider-history/cash-complete/${dispatch._id}`, {
-        sortCOD: shortageAmount,
+        sortCOD: createSortCOD ? shortageAmount : 0,
       });
       if (res.data.success) {
         toast.success("✅ Cash Finalized & Dispatch Completed", { autoClose: 2500 });
@@ -72,7 +73,7 @@ export default function CompleteCashModal({ isOpen, onClose, dispatch }) {
         {diff !== 0 && (
           <div style={{...S.diffBox, background: isShortage ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)" }}>
             <span style={{ color: isShortage ? "#fca5a5" : "#6ee7b7", fontWeight: 700 }}>
-              {isShortage ? "⚠️ Total Shortage:" : "ℹ️ Total Excess:"}
+              {isShortage ? "⚠️ Shortage:" : "ℹ️ Excess:"}
             </span>
             <span style={{ color: isShortage ? "#f87171" : "#34d399", fontSize: "18px", fontWeight: 800 }}>
               ₹{Math.abs(diff)}
@@ -82,8 +83,17 @@ export default function CompleteCashModal({ isOpen, onClose, dispatch }) {
 
         {isShortage && (
           <div style={S.sortBlock}>
-            <p style={S.infoText}>
-              Submitting will automatically mark exactly <strong>₹{shortageAmount}</strong> as <strong>Sort COD</strong> in the layout.
+            <label style={S.checkboxLabel}>
+              <input
+                type="checkbox"
+                style={S.checkbox}
+                checked={createSortCOD}
+                onChange={e => setCreateSortCOD(e.target.checked)}
+              />
+              <span style={S.checkboxText}>Create SORT COD Record for ₹{shortageAmount}</span>
+            </label>
+            <p style={S.helpText}>
+              Check this box to inform the accounting team about the exact cash shortage amount.
             </p>
           </div>
         )}
@@ -139,9 +149,12 @@ const S = {
   },
   sortBlock: {
     background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)",
-    borderRadius: "10px", padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center"
+    borderRadius: "10px", padding: "16px"
   },
-  infoText: { margin: 0, fontSize: "13px", color: "#fbbf24", lineHeight: "1.5" },
+  checkboxLabel: { display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" },
+  checkbox: { width: "18px", height: "18px", accentColor: "#f59e0b" },
+  checkboxText: { color: "#fbbf24", fontWeight: 700, fontSize: "14px" },
+  helpText: { margin: "8px 0 0 28px", fontSize: "12px", color: "#94a3b8", lineHeight: "1.4" },
 
   footer: { display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "4px" },
   cancelBtn: { padding: "10px 18px", background: "rgba(100,116,139,0.15)", border: "1px solid rgba(100,116,139,0.3)", color: "#94a3b8", borderRadius: "8px", fontSize: "13px", fontWeight: 700, cursor: "pointer" },
