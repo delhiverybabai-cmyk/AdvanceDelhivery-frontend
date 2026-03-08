@@ -352,15 +352,15 @@ function LiveDispatch() {
     }
 
     try {
-      const { allUndelivered, allPickups } = await fetchAllPackageDetails(currentDispatches);
-      const allWaybills = [...allUndelivered, ...allPickups];
+      const { allUndelivered } = await fetchAllPackageDetails(currentDispatches);
+      const allWaybills = [...allUndelivered];
 
       if (allWaybills.length === 0) {
         toast.info("No packages found across all dispatches to scan.");
         return;
       }
 
-      toast.info(`Scanning ${allWaybills.length} undelivered & pickup packages...`);
+      toast.info(`Scanning ${allWaybills.length} undelivered packages...`);
       
       // Note: Because the endpoint requires a dispatch ID in the URL parameter, we will map through ALL 
       // individual dispatches and hit the API individually for each one using their respective extracted waybills,
@@ -376,8 +376,7 @@ function LiveDispatch() {
            );
            
            const waybills = [
-             ...(response.data.responses?.undelivered || []),
-             ...(response.data.responses?.pickupNotCompleted || [])
+             ...(response.data.responses?.undelivered || [])
            ];
 
            if (waybills.length > 0) {
@@ -780,13 +779,6 @@ function LiveDispatch() {
               onClick={handleBulkForceConsigneeAll}
             >
               Scan Undelivered
-            </button>
-
-            <button 
-              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"}}
-              onClick={() => setIsDirectEODModalOpen(true)}
-            >
-              Direct EOD
             </button>
           </div>
         )}
