@@ -5,6 +5,7 @@ import RiderManagement from "./components/RiderManagement/RiderManagment";
 import AddNewRider from "./components/RiderManagement/AddNewRider";
 import LiveDispatch from "./components/LiveDispatch/livedispatch";
 import DispatchDetail from "./components/LiveDispatch/DispatchDetail";
+import DispatchHistory from "./components/DispatchHistory/DispatchHistory";
 import TokenManagement from "./components/TokenManagement/TokenManagement";
 import OverViewManagment from "./components/overview/OverViewManagment";
 import BulkGenricIncoming from "./components/BulkManagment/BulkGenricIncoming";
@@ -22,7 +23,7 @@ function App() {
           <Route path="rider-management" element={<RiderManagement />} />
           <Route path="add-rider" element={<AddNewRider />} />
           <Route path="live-dispatch" element={<LiveDispatch />} />
-          {/* <Route path="dispatch-history" element={<DispatchHistory />} /> */}
+          <Route path="dispatch-history" element={<DispatchHistory />} />
           <Route path="dispatch-details" element={<DispatchDetail />} />
           <Route path="token-management" element={<TokenManagement />} />
           <Route path="bulk-gi" element={<BulkGenricIncoming />} />
