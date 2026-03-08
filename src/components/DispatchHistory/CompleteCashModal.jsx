@@ -101,9 +101,9 @@ export default function CompleteCashModal({ isOpen, onClose, dispatch }) {
         <div style={S.footer}>
           <button style={S.cancelBtn} onClick={onClose}>Cancel</button>
           <button
-            style={{ ...S.submitBtn, opacity: submitting ? 0.7 : 1 }}
+            style={{ ...S.submitBtn, opacity: (submitting || (isShortage && !createSortCOD)) ? 0.4 : 1, cursor: (submitting || (isShortage && !createSortCOD)) ? "not-allowed" : "pointer" }}
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || (isShortage && !createSortCOD)}
           >
             {submitting ? "Completing…" : "Confirm & Complete"}
           </button>
