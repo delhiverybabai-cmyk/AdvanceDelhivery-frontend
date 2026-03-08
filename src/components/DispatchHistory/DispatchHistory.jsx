@@ -3,6 +3,8 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ScanUndeliveredModal from "./ScanUndeliveredModal";
+import CashManagementModal from "./CashManagementModal";
+import CompleteCashModal from "./CompleteCashModal";
 
 // Status → tab mapping
 const TAB_STATUSES = {
@@ -48,6 +50,8 @@ export default function DispatchHistory() {
     new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+  const [isCompleteCashOpen, setIsCompleteCashOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
   const limit = 50;
 
@@ -205,9 +209,13 @@ export default function DispatchHistory() {
           <table style={S.table}>
             <thead>
               <tr>
-                {["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Undelivered", "RVP Pending", "COD", "Action"].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
+                {activeTab === "cash" ? (
+                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Sort COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
+                ) : activeTab === "completed" ? (
+                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Status"].map(h => <th key={h} style={S.th}>{h}</th>)
+                ) : (
+                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Undelivered", "RVP Pending", "COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
+                )}
               </tr>
             </thead>
             <tbody>
@@ -233,23 +241,66 @@ export default function DispatchHistory() {
                     <td style={S.td}><Num n={d.deliveredCount} good /></td>
                     {/* RVP = pickupCompleted */}
                     <td style={S.td}><Num n={d.pickupCompletedCount} warn /></td>
-                    {/* Undelivered */}
-                    <td style={S.td}><Num n={d.undeliveredCount} bad /></td>
-                    {/* RVP Pending = pickupNotCompleted */}
-                    <td style={S.td}><Num n={d.pickupNotCompletedCount} bad /></td>
-                    {/* COD */}
-                    <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
-                      {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
-                    </td>
-                    {/* Action — Scan Undelivered */}
-                    <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
-                      <ScanRowButton
-                        status={d.status}
-                        hasItems={(d.undelivered?.length || 0) + (d.pickupNotCompleted?.length || 0) > 0}
-                        onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
-                        onComplete={() => completeZeroItems(d._id)}
-                      />
-                    </td>
+
+                    {activeTab === "parcels" && (
+                      <>
+                        {/* Undelivered */}
+                        <td style={S.td}><Num n={d.undeliveredCount} bad /></td>
+                        {/* RVP Pending = pickupNotCompleted */}
+                        <td style={S.td}><Num n={d.pickupNotCompletedCount} bad /></td>
+                        {/* COD */}
+                        <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
+                          {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
+                        </td>
+                        {/* Action — Scan Undelivered */}
+                        <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
+                          <ScanRowButton
+                            status={d.status}
+                            hasItems={(d.undelivered?.length || 0) + (d.pickupNotCompleted?.length || 0) > 0}
+                            onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
+                            onComplete={() => completeZeroItems(d._id)}
+                          />
+                        </td>
+                      </>
+                    )}
+
+                    {activeTab === "cash" && (
+                      <>
+                        <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
+                          {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
+                        </td>
+                        <td style={S.td}><Num n={d.receivedCash} good /></td>
+                        <td style={S.td}><Num n={d.receivedOnline} good /></td>
+                        <td style={S.td}>{d.sortCOD > 0 ? `₹${d.sortCOD}` : "—"}</td>
+                        <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
+                           <div style={{ display: "flex", gap: "8px" }}>
+                             <button onClick={() => { setSelectedDispatch(d); setIsCashModalOpen(true); }} style={{...S.manageBtn, background: d.status === 5 ? "rgba(100,116,139,0.2)" : S.manageBtn.background, color: d.status === 5 ? "#94a3b8" : "#fff", boxShadow: d.status === 5 ? "none" : S.manageBtn.boxShadow }}>
+                               Manage
+                             </button>
+                             {d.status === 5 && (
+                               <button onClick={() => { setSelectedDispatch(d); setIsCompleteCashOpen(true); }} style={S.completeBtn}>
+                                 Complete
+                               </button>
+                             )}
+                           </div>
+                        </td>
+                      </>
+                    )}
+
+                    {activeTab === "completed" && (
+                      <>
+                        <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
+                          {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
+                        </td>
+                        <td style={S.td}><Num n={d.receivedCash} good /></td>
+                        <td style={S.td}><Num n={d.receivedOnline} good /></td>
+                        <td style={S.td}>
+                          <span style={{ padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${STATUS_COLOR[d.status]}22`, color: STATUS_COLOR[d.status] ?? "#94a3b8", border: `1px solid ${STATUS_COLOR[d.status]}55` }}>
+                            {STATUS_LABEL[d.status] || `State ${d.status}`}
+                          </span>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 </React.Fragment>
               ))}
@@ -276,11 +327,36 @@ export default function DispatchHistory() {
         onClose={() => {
           setIsScanModalOpen(false);
           setSelectedDispatch(null);
-          // Re-fetch to reflect updated status
           fetchHistory(filterDate, page);
         }}
         dispatch={selectedDispatch}
       />
+
+      {/* Cash Management Modal (Step 1) */}
+      {isCashModalOpen && (
+        <CashManagementModal
+          isOpen={isCashModalOpen}
+          onClose={() => {
+            setIsCashModalOpen(false);
+            setSelectedDispatch(null);
+            fetchHistory(filterDate, page);
+          }}
+          dispatch={selectedDispatch}
+        />
+      )}
+
+      {/* Complete Cash Modal (Step 2) */}
+      {isCompleteCashOpen && (
+        <CompleteCashModal
+          isOpen={isCompleteCashOpen}
+          onClose={() => {
+            setIsCompleteCashOpen(false);
+            setSelectedDispatch(null);
+            fetchHistory(filterDate, page);
+          }}
+          dispatch={selectedDispatch}
+        />
+      )}
     </div>
   );
 }
@@ -397,6 +473,18 @@ const S = {
     cursor: "pointer", transition: "all 0.3s ease",
     boxShadow: "0 4px 12px rgba(239,68,68,0.35)",
     letterSpacing: "0.3px", height: 40,
+  },
+  manageBtn: {
+    padding: "6px 14px", border: "none", borderRadius: 8,
+    background: "linear-gradient(135deg,#8b5cf6,#6d28d9)",
+    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(139,92,246,0.3)", transition: "all 0.15s"
+  },
+  completeBtn: {
+    padding: "6px 14px", border: "none", borderRadius: 8,
+    background: "linear-gradient(135deg,#10b981,#059669)",
+    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(16,185,129,0.3)", transition: "all 0.15s"
   },
   statRow:   { display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" },
   stat:      { flex: "1 1 120px", background: "rgba(30,41,59,0.7)", border: "1px solid rgba(148,163,184,0.12)", borderRadius: 10, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 3 },
