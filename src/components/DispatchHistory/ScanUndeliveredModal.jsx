@@ -7,7 +7,7 @@ const BASE = process.env.REACT_APP_BASE_URL;
 export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
   // dispatch = single row object from DispatchHistory (has _id, dispatchId, feName, status, etc.)
 
-  const [session, setSession] = useState(null);   // { undelivered, pickupNotCompleted, undeliveredScanned, status, isAllParcelReceived }
+  const [session, setSession] = useState(null);   // { undelivered, undeliveredScanned, status, isAllParcelReceived }
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scanInput, setScanInput] = useState("");
@@ -38,7 +38,6 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
       if (res.data.success) {
         setSession({
           undelivered: res.data.undelivered,
-          pickupNotCompleted: res.data.pickupNotCompleted,
           undeliveredScanned: res.data.undeliveredScanned,
           status: res.data.status,
           isAllParcelReceived: res.data.isAllParcelReceived,
@@ -60,7 +59,7 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
     const id = scanInput.trim();
     if (!id || scanning) return;
 
-    const allExpected = [...(session.undelivered || []), ...(session.pickupNotCompleted || [])];
+    const allExpected = [...(session.undelivered || [])];
 
     // Client-side validation first
     if (!allExpected.includes(id)) {
@@ -142,7 +141,7 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
   if (!isOpen) return null;
 
   // ── Derived values ──────────────────────────────────────────────────────────
-  const allExpected = session ? [...(session.undelivered || []), ...(session.pickupNotCompleted || [])] : [];
+  const allExpected = session ? [...(session.undelivered || [])] : [];
   const scannedSet = new Set(session?.undeliveredScanned || []);
   const receivedCount = scannedSet.size;
   const notReceivedCount = allExpected.length - receivedCount;
@@ -242,23 +241,14 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
 
             {/* ── Parcel grid ── */}
             {allExpected.length === 0 ? (
-              <div style={S.centerMsg}>No undelivered / pickup-not-completed parcels on record.</div>
+              <div style={S.centerMsg}>No undelivered parcels on record.</div>
             ) : (
               <div style={S.listWrapper}>
-                {/* Section headers */}
                 {session.undelivered.length > 0 && (
                   <div style={S.sectionLabel}>🚫 Undelivered ({session.undelivered.length})</div>
                 )}
                 <div style={S.grid}>
                   {session.undelivered.map(id => (
-                    <ParcelCard key={id} id={id} received={scannedSet.has(id)} />
-                  ))}
-                </div>
-                {session.pickupNotCompleted.length > 0 && (
-                  <div style={{ ...S.sectionLabel, marginTop: 12 }}>📬 Pickup Not Completed ({session.pickupNotCompleted.length})</div>
-                )}
-                <div style={S.grid}>
-                  {session.pickupNotCompleted.map(id => (
                     <ParcelCard key={id} id={id} received={scannedSet.has(id)} />
                   ))}
                 </div>

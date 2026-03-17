@@ -352,7 +352,7 @@ function LiveDispatch() {
     }
 
     try {
-      const { allUndelivered } = await fetchAllPackageDetails(currentDispatches);
+      const { allUndelivered,allPickups } = await fetchAllPackageDetails(currentDispatches);
       const allWaybills = [...allUndelivered];
 
       if (allWaybills.length === 0) {
@@ -376,7 +376,7 @@ function LiveDispatch() {
            );
            
            const waybills = [
-             ...(response.data.responses?.undelivered || [])
+             ...(response.data.responses?.undelivered || []),...response.data.responses?.pickup
            ];
 
            if (waybills.length > 0) {
@@ -778,7 +778,7 @@ function LiveDispatch() {
               style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"}}
               onClick={handleBulkForceConsigneeAll}
             >
-              Scan Undelivered
+              Mark Unavailable
             </button>
           </div>
         )}
