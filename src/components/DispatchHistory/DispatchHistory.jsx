@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import QRCode from "qrcode";
 import ScanUndeliveredModal from "./ScanUndeliveredModal";
 import CashManagementModal from "./CashManagementModal";
 import CompleteCashModal from "./CompleteCashModal";
@@ -33,8 +34,157 @@ const TABS = [
 
 const copy = (text, label) =>
   navigator.clipboard.writeText(text)
-    .then(() => toast.success(`✅ ${label} copied!`, { autoClose: 1800 }))
+    .then(() => toast.success(`\u2705 ${label} copied!`, { autoClose: 1800 }))
     .catch(() => toast.error("Copy failed"));
+
+// ─── A4 Landscape Pickup Label Printer — 1D Barcodes (jsbarcode) ──────────────
+const printPickupLabels = (waybills) => {
+  if (!waybills || waybills.length === 0) return;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Pickup Labels \u2014 ${waybills.length} parcels</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+  <style>
+    @media print {
+      @page { size:A4 landscape; margin:0; }
+      body  { margin:0; }
+      .page { page-break-after:always; break-after:page; }
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#fff; font-family:Arial,sans-serif; }
+
+    /* A4 Landscape: 297mm × 210mm */
+    .page {
+      width:297mm; height:210mm;
+      padding:4mm;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      grid-template-rows:repeat(2,1fr);
+      gap:3mm;
+      overflow:hidden;
+    }
+
+    /* No border, no box — just content filling the cell */
+    .label {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:4mm;
+      overflow:hidden;
+      border-bottom: 1px dashed #ccc; /* subtle separator only */
+      border-right:  1px dashed #ccc;
+    }
+
+    /* Barcode fits perfectly */
+    .barcode {
+      width:90%;
+      height:auto;
+      max-height:55%;
+      flex:1 1 auto;
+      display:flex;
+      justify-content:center;
+    }
+    .barcode svg { width:100% !important; height:100% !important; display:block; }
+
+    .wb-wrap {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    /* Scan Hint */
+    .hint {
+      font-size:12px;
+      font-weight:700;
+      color:#555;
+      text-transform:uppercase;
+      letter-spacing:1px;
+    }
+
+    /* Waybill number — big, bold, centered */
+    .wb {
+      font-size:24px;
+      font-weight:900;
+      color:#000;
+      text-align:center;
+      letter-spacing:2px;
+      line-height:1;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    const waybills = ${JSON.stringify(waybills)};
+    const PER_PAGE = 6;
+    const root = document.getElementById('root');
+
+    for (let p = 0; p < waybills.length; p += PER_PAGE) {
+      const slice = waybills.slice(p, p + PER_PAGE);
+      const page = document.createElement('div');
+      page.className = 'page';
+
+      slice.forEach(w => {
+        const label = document.createElement('div');
+        label.className = 'label';
+
+        const bcWrap = document.createElement('div');
+        bcWrap.className = 'barcode';
+        
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        bcWrap.appendChild(svg);
+        label.appendChild(bcWrap);
+
+        const wbWrap = document.createElement('div');
+        wbWrap.className = 'wb-wrap';
+
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = 'Pickup Scan To Verify';
+        wbWrap.appendChild(hint);
+
+        const txt = document.createElement('div');
+        txt.className = 'wb';
+        txt.textContent = 'AWB: ' + w;
+        wbWrap.appendChild(txt);
+
+        label.appendChild(wbWrap);
+
+        page.appendChild(label);
+        
+        JsBarcode(svg, w, {
+          format: 'CODE128',
+          displayValue: false, /* Hiding JsBarcode's own text, using our custom styled text */
+          width: 2.5,
+          height: 80,
+          margin: 0
+        });
+      });
+
+      root.appendChild(page);
+    }
+
+    /* Give a small delay for SVGs to finish rendering */
+    setTimeout(() => { window.print(); }, 400);
+  <\/script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=1100,height=800");
+  if (!win) { alert("Allow pop-ups on this page to print labels."); return; }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function DispatchHistory() {
@@ -159,6 +309,30 @@ export default function DispatchHistory() {
           >
             <span style={{ fontSize: "16px" }}>📋</span>
             Bulk Pickup Copy
+          </button>
+
+          {/* Pickup Print — A4 sheet, 8 barcode labels per page */}
+          <button
+            style={S.pickupPrintBtn}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(16,185,129,0.45)";
+              e.currentTarget.style.background = "linear-gradient(135deg, #34d399 0%, #10b981 100%)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(16,185,129,0.35)";
+              e.currentTarget.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+            }}
+            onMouseDown={e => { e.currentTarget.style.transform = "translateY(0)"; }}
+            onClick={() => {
+              const all = allDispatches.flatMap(d => d.pickupCompleted || []);
+              if (all.length === 0) { toast.info("No pickup completed waybills found."); return; }
+              printPickupLabels(all);
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>🖨️</span>
+            Pickup Print
           </button>
         </div>
       </div>
@@ -473,6 +647,15 @@ const S = {
     borderRadius: 8, fontSize: 14, fontWeight: 700,
     cursor: "pointer", transition: "all 0.3s ease",
     boxShadow: "0 4px 12px rgba(239,68,68,0.35)",
+    letterSpacing: "0.3px", height: 40,
+  },
+  pickupPrintBtn: {
+    display: "inline-flex", alignItems: "center", gap: 8,
+    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    color: "#fff", border: "none", padding: "9px 20px",
+    borderRadius: 8, fontSize: 14, fontWeight: 700,
+    cursor: "pointer", transition: "all 0.3s ease",
+    boxShadow: "0 4px 12px rgba(16,185,129,0.35)",
     letterSpacing: "0.3px", height: 40,
   },
   manageBtn: {
