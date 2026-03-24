@@ -14,6 +14,16 @@ import CSEscalation from "./components/FlowManagment/CSEscalation";
 import WaybillForamater from "./components/FlowManagment/WaybillForamater";
 import PickupStatusPage from "./components/LiveDispatch/PickupStatusPage";
 
+import RiderDetails from "./components/RiderManagement/RiderDetails";
+import UpdateRider from "./components/RiderManagement/UpdateRider";
+import RiderDeliveryHistoryList from "./components/RiderManagement/RiderDeliveryHistoryList";
+import AddRiderDeliveryHistory from "./components/RiderManagement/AddRiderDeliveryHistory";
+import UpdateDeliveryHistory from "./components/RiderManagement/UpdateDeliveryHistory";
+import RiderDebtManagement from "./components/RiderManagement/RiderDebtManagement";
+import RiderPaidHistory from "./components/RiderManagement/RiderPaidHistory";
+import ExpenseProfitList from "./components/Expense/ExpenseProfitList";
+import AddExpenseProfit from "./components/Expense/AddExpenseProfit";
+
 function App() {
   return (
     <Router>
@@ -22,6 +32,20 @@ function App() {
           <Route path="/" element={<OverViewManagment />} />
           <Route path="rider-management" element={<RiderManagement />} />
           <Route path="add-rider" element={<AddNewRider />} />
+          
+          {/* New Rider Management Routes */}
+          <Route path="rider-details/:id" element={<RiderDetails />} />
+          <Route path="update-rider/:id" element={<UpdateRider />} />
+          <Route path="rider-delivery-history/:riderId" element={<RiderDeliveryHistoryList />} />
+          <Route path="add-rider-delivery-history/:riderId" element={<AddRiderDeliveryHistory />} />
+          <Route path="update-rider-delivery-history/:historyId/:riderId" element={<UpdateDeliveryHistory />} />
+          <Route path="rider-debt/:riderId" element={<RiderDebtManagement />} />
+          <Route path="rider-paid-history/:riderId" element={<RiderPaidHistory />} />
+
+          {/* New Expense Routes */}
+          <Route path="expence-profit" element={<ExpenseProfitList />} />
+          <Route path="add-expence-profit" element={<AddExpenseProfit />} />
+
           <Route path="live-dispatch" element={<LiveDispatch />} />
           <Route path="dispatch-history" element={<DispatchHistory />} />
           <Route path="dispatch-details" element={<DispatchDetail />} />
