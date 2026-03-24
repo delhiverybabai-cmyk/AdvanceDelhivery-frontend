@@ -825,6 +825,7 @@ function LiveDispatch() {
                     <>
                       <th style={styles.th}>Packages</th>
                       <th style={styles.th}>Action</th>
+                      <th style={styles.th}>Redirect WIP</th>
                     </>
                   )}
                 </tr>
@@ -906,6 +907,23 @@ function LiveDispatch() {
                             }}
                           >
                             Bulk Dispatch
+                          </button>
+                        </td>
+                        <td style={styles.td}>
+                          <button
+                            style={styles.copyBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                `https://last-mile.delhivery.com/#/lm/dispatch/${
+                                  disp.id ?? disp._id
+                                }/update`,
+                                "_blank",
+                                "noopener,noreferrer"
+                              );
+                            }}
+                          >
+                            Redirect WIP
                           </button>
                         </td>
                       </>
