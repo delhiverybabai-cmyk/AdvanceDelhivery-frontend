@@ -112,6 +112,17 @@ const styles = {
     background: "rgba(148,163,184,0.1)",
     borderRadius: "6px",
   },
+  uniqueCount: {
+    display: "inline-block",
+    background: "rgba(16, 185, 129, 0.1)",
+    border: "1px solid rgba(16, 185, 129, 0.3)",
+    borderRadius: "6px",
+    padding: "2px 8px",
+    color: "#10b981",
+    fontSize: "12px",
+    fontWeight: "700",
+    marginTop: "8px",
+  },
 };
 
 const WipBulkDispatchModel = ({
@@ -122,9 +133,26 @@ const WipBulkDispatchModel = ({
 }) => {
   const [dispatchDetail, setDispatchDetail] = useState("");
   const [dispatchId, setDispatchId] = useState("");
-  const [waybillsArray, setWaybillsArray] = useState(""); // JSON array string
+  const [waybillsInput, setWaybillsInput] = useState(""); // Raw input string
   const [loading, setLoading] = useState(false);
   const [focusInput, setFocusInput] = useState("");
+
+  // ✅ Extract waybills from various formats
+  const extractWaybills = (text) => {
+    if (!text.trim()) return [];
+
+    // Remove markdown link format: [text](url) -> extract text
+    let cleaned = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+    // Extract all alphanumeric sequences (waybills) - at least 10 chars
+    const waybillPattern = /[a-zA-Z0-9]{10,}/g;
+    const matches = cleaned.match(waybillPattern) || [];
+
+    // Remove duplicates and return unique waybills
+    return [...new Set(matches)];
+  };
+
+  const uniqueWaybills = extractWaybills(waybillsInput);
 
   useEffect(() => {
     if (dispatch?.id || dispatch?._id) {
@@ -136,30 +164,15 @@ const WipBulkDispatchModel = ({
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
-    let wbnsArray;
-    try {
-      if (!dispatchId) {
-        toast.error("Dispatch ID is required.");
-        return;
-      }
-      // Parse JSON array
-      wbnsArray = JSON.parse(waybillsArray);
+    if (!dispatchId) {
+      toast.error("Dispatch ID is required.");
+      return;
+    }
 
-      // Validate it's an array of strings
-      if (!Array.isArray(wbnsArray)) {
-        toast.error("Waybills must be a valid JSON array.");
-        return;
-      }
-      if (wbnsArray.length === 0) {
-        toast.error("Array cannot be empty.");
-        return;
-      }
-      if (!wbnsArray.every((wb) => typeof wb === "string" && wb.trim())) {
-        toast.error("All waybills must be non-empty strings.");
-        return;
-      }
-    } catch (error) {
-      toast.error('Invalid JSON format. Use: ["waybill1","waybill2"]');
+    const wbnsArray = uniqueWaybills;
+
+    if (wbnsArray.length === 0) {
+      toast.error("No valid waybill numbers found. Paste some waybills first.");
       return;
     }
 
@@ -183,7 +196,7 @@ const WipBulkDispatchModel = ({
           `✅ Success! ${wbnsArray.length} packages added to dispatch ${dispatchId}.`
         );
         onClose();
-        setWaybillsArray("");
+        setWaybillsInput(""); // Clear the raw input
       } else {
         toast.error("Failed to add packages.");
       }
@@ -219,21 +232,28 @@ const WipBulkDispatchModel = ({
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Waybill Numbers (JSON Array)</label>
+          <label style={styles.label}>Waybill Numbers (Any Format)</label>
           <textarea
             style={{
               ...styles.textarea,
               ...(focusInput === "waybills" ? styles.inputFocus : {}),
             }}
-            placeholder='["1490823859095373","1490823859095371"]'
-            value={waybillsArray}
-            onChange={(e) => setWaybillsArray(e.target.value)}
+            placeholder="Paste waybills here (spaced, comma separated, or list)..."
+            value={waybillsInput}
+            onChange={(e) => setWaybillsInput(e.target.value)}
             onFocus={() => setFocusInput("waybills")}
             onBlur={() => setFocusInput("")}
             disabled={loading}
           />
+          {uniqueWaybills.length > 0 && (
+            <div style={styles.uniqueCount}>
+              ✅ {uniqueWaybills.length} Unique Waybills Found
+            </div>
+          )}
           <div style={styles.exampleText}>
-            Example: <code>["1490823859095373","1490823859095371"]</code>
+            e.g.: 1490823859095373, 1490823859095371 <br />
+            or: [1490823859095373](url) <br />
+            or: 1490823859095373 <br /> &nbsp;&nbsp; 1490823859095371
           </div>
         </div>
 
