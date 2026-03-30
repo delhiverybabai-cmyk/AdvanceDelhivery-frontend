@@ -72,7 +72,7 @@ const AddRiderDeliveryHistory = () => {
       });
       setSuccess(true);
       setFormData({ riderId: riderId || "", assignedParcels: "", successfulDelivered: "", successfulRVP: "", cashedDeposited: "", perParcelRate: 15, selectedDate: "" });
-      setTimeout(() => { setSuccess(false); navigate(`/rider-details/${riderId}`); }, 3000);
+      setTimeout(() => { setSuccess(false); navigate(`/delhivery-history/${riderId}`); }, 3000);
     } catch (error) { setErrors({ submit: error.response?.data?.message || "Failed to add delivery history." }); }
     finally { setLoading(false); }
   };
@@ -84,7 +84,7 @@ const AddRiderDeliveryHistory = () => {
   return (
     <div style={s.container}>
       <main style={s.main}>
-        <button style={s.backButton} onClick={() => navigate(`/rider-details/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back to Delivery History</button>
+        <button style={s.backButton} onClick={() => navigate(`/delhivery-history/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back to Delivery History</button>
         <div style={s.headerSection}><h1 style={s.mainTitle}>Add Delivery History</h1><p style={s.subtitle}>Record new delivery and payment history for the rider</p></div>
         <div style={s.riderInfo}><div style={s.riderIdLabel}>Rider ID: {formData.riderId}</div></div>
         <div style={s.formContainer}>
@@ -126,7 +126,7 @@ const AddRiderDeliveryHistory = () => {
                 </div>
               </div>
               <div style={s.buttonGroup}>
-                <button type="button" onClick={() => navigate(`/rider-details/${riderId}`)} style={s.cancelButton} disabled={loading}>Cancel</button>
+                <button type="button" onClick={() => navigate(`/delhivery-history/${riderId}`)} style={s.cancelButton} disabled={loading}>Cancel</button>
                 <button type="submit" style={{ ...s.submitButton, ...(loading ? s.submitButtonDisabled : {}) }} disabled={loading}>
                   {loading ? <><SpinnerComponent />Adding History...</> : <><span style={{ marginRight: "8px" }}>💾</span>Add History</>}
                 </button>
