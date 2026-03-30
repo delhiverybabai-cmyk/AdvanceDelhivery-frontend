@@ -76,14 +76,14 @@ const RiderDeliveryHistoryList = () => {
   };
 
   if (loading) return <div style={styles.container}><main style={styles.main}><div style={styles.loadingContainer}><SpinnerComponent /><div style={styles.loadingText}>Loading delivery history...</div></div></main></div>;
-  if (error) return <div style={styles.container}><main style={styles.main}><button style={styles.backButton} onClick={() => navigate(`/rider-details/${riderId}`)}>← Back</button><div style={styles.errorContainer}><h3>⚠️ Error</h3><p>{error}</p><button style={{ padding: "12px 24px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }} onClick={fetchDeliveryHistory}>🔄 Retry</button></div></main></div>;
+  if (error) return <div style={styles.container}><main style={styles.main}><button style={styles.backButton} onClick={() => navigate(`/rider-management`)}>← Back</button><div style={styles.errorContainer}><h3>⚠️ Error</h3><p>{error}</p><button style={{ padding: "12px 24px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }} onClick={fetchDeliveryHistory}>🔄 Retry</button></div></main></div>;
 
   const summary = calculateSummary();
 
   return (
     <div style={styles.container}>
       <main style={styles.main}>
-        <button style={styles.backButton} onClick={() => navigate(`/rider-details/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back</button>
+        <button style={styles.backButton} onClick={() => navigate(`/rider-management`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back</button>
         <div style={styles.headerSection}>
           <div><h1 style={styles.mainTitle}>Delivery History</h1><p style={styles.subtitle}>Complete delivery and payment history records</p></div>
           <div style={styles.controlsSection}>

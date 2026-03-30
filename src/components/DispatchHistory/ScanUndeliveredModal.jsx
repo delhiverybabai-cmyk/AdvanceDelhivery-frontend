@@ -7,28 +7,27 @@ const BASE = process.env.REACT_APP_BASE_URL;
 export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
   // dispatch = single row object from DispatchHistory (has _id, dispatchId, feName, status, etc.)
 
-  const [session, setSession] = useState(null);   // { undelivered, undeliveredScanned, status, isAllParcelReceived }
+  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scanInput, setScanInput] = useState("");
-  const [scanning, setScanning] = useState(false); // per-scan call in progress
-  const [submitResult, setSubmitResult] = useState(null); // result after submit
+  const [scanning, setScanning] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const inputRef = useRef(null);
 
   // ── Open / reset ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen || !dispatch?._id) return;
-    setSubmitResult(null);
     setScanInput("");
     startSession();
   }, [isOpen, dispatch?._id]); // eslint-disable-line
 
   // Auto-focus scan input when session loaded
   useEffect(() => {
-    if (session && !submitResult) {
+    if (session) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [session, submitResult]);
+  }, [session]);
 
   // ── API calls ────────────────────────────────────────────────────────────────
   const startSession = async () => {
@@ -112,14 +111,13 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
     try {
       const res = await axios.post(`${BASE}/api/rider-history/scan-session/submit/${dispatch._id}`);
       if (res.data.success) {
-        setSubmitResult(res.data);
-        // Update local session status from server response (3 = all received, 1 = missing parcels)
         setSession(prev => ({ ...prev, status: res.data.status, isAllParcelReceived: res.data.isAllParcelReceived }));
         if (res.data.isAllParcelReceived === 1) {
-          toast.success("✅ All parcels received! Session submitted.", { autoClose: 3000 });
+          setFeedback({ text: "✅ All parcels received! Session submitted.", type: "success" });
         } else {
-          toast.warning(`⚠️ ${res.data.missingCount} parcel(s) missing — dispatch kept in scanning status.`, { autoClose: 4000 });
+          setFeedback({ text: `⚠️ ${res.data.missingCount} parcel(s) missing — dispatch kept in scanning status.`, type: "warning" });
         }
+        setTimeout(() => setFeedback(null), 3000);
       } else {
         toast.error("Submit failed. Try again.");
       }
@@ -133,8 +131,8 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
 
   const handleClose = () => {
     setSession(null);
-    setSubmitResult(null);
     setScanInput("");
+    setFeedback(null);
     onClose();
   };
 
@@ -178,6 +176,7 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
           <div style={S.centerMsg}>Loading parcel list…</div>
         ) : !session ? null : (
           <>
+
             {/* ── Summary badges ── */}
             <div style={S.summaryRow}>
               <div style={{ ...S.badge, ...S.badgeGreen }}>
@@ -197,7 +196,7 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
               </div>
             </div>
 
-            {/* ── Scan input (hidden after submit unless re-opening) ── */}
+            {/* ── Scan input (hidden after submit) ── */}
             {!sessionAlreadySubmitted && (
               <div style={S.scanRow}>
                 <input
@@ -219,25 +218,21 @@ export default function ScanUndeliveredModal({ isOpen, onClose, dispatch }) {
                 </button>
               </div>
             )}
-
-            {/* ── Submit result: Missing parcels section ── */}
-            {submitResult && submitResult.isAllParcelReceived === 0 && (
-              <div style={S.missingBox}>
-                <div style={S.missingTitle}>
-                  ⚠️ {submitResult.missingCount} Missing Parcel{submitResult.missingCount !== 1 ? "s" : ""} — To Collect
-                </div>
-                <div style={S.missingGrid}>
-                  {submitResult.missing.map(id => (
-                    <div key={id} style={S.missingCard}>
-                      <a href={`https://hq.delhivery.com/p/pntrzz/${id}`} target="_blank" rel="noopener noreferrer" style={S.missingLink}>
-                        {id}
-                      </a>
-                      <span style={{ color: "#f87171", fontSize: 16 }}>❌</span>
-                    </div>
-                  ))}
-                </div>
+            {/* ── Submit Feedback Message ── */}
+            {feedback && (
+              <div style={{
+                margin: "0 0x 14px 0px", padding: "12px 18px", borderRadius: "10px",
+                background: feedback.type === "success" ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)",
+                border: `1px solid ${feedback.type === "success" ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`,
+                color: feedback.type === "success" ? "#10b981" : "#f59e0b",
+                fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px",
+                animation: "fadeIn 0.2s ease-out"
+              }}>
+                {feedback.text}
               </div>
             )}
+
+
 
             {/* ── Parcel grid ── */}
             {allExpected.length === 0 ? (
@@ -361,27 +356,6 @@ const S = {
     background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
     border: "none", borderRadius: "12px", cursor: "pointer",
     boxShadow: "0 4px 14px rgba(16,185,129,0.25)", whiteSpace: "nowrap",
-  },
-
-  missingBox: {
-    background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)",
-    borderRadius: "14px", padding: "16px 18px",
-  },
-  missingTitle: {
-    color: "#f87171", fontWeight: 700, fontSize: "14px", marginBottom: "12px",
-  },
-  missingGrid: {
-    display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "8px",
-    maxHeight: "160px", overflowY: "auto",
-  },
-  missingCard: {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "8px 12px", borderRadius: "10px",
-    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-  },
-  missingLink: {
-    textDecoration: "none", color: "#fca5a5", fontWeight: 700,
-    fontSize: "12px", fontFamily: "monospace", wordBreak: "break-all",
   },
 
   sectionLabel: { color: "#94a3b8", fontSize: "12px", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px", textTransform: "uppercase" },

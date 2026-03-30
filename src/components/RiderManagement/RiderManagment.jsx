@@ -1,178 +1,391 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const RiderManagment = () => {
-  const [riders, setRiders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
+const BASE = process.env.REACT_APP_BASE_URL;
 
-  const styles = {
-    container: { minHeight: "100vh", backgroundColor: "#0f172a", fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" },
-    main: { maxWidth: "1400px", margin: "0 auto", padding: "48px 32px" },
-    headerSection: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "56px", flexWrap: "wrap", gap: "24px" },
-    titleSection: { flex: 1, textAlign: "left" },
-    mainTitle: { fontSize: "48px", fontWeight: "800", background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "16px", letterSpacing: "-0.02em" },
-    subtitle: { fontSize: "18px", color: "#94a3b8", lineHeight: "1.6", maxWidth: "500px" },
-    buttonGroup: { display: "flex", gap: "16px" },
-    addButton: { display: "flex", alignItems: "center", padding: "16px 32px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", border: "none", borderRadius: "12px", cursor: "pointer", fontSize: "16px", fontWeight: "600", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 8px 25px rgba(16, 185, 129, 0.3)", position: "relative", overflow: "hidden" },
-    expenseButton: { display: "flex", alignItems: "center", padding: "16px 32px", background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", color: "#ffffff", border: "none", borderRadius: "12px", cursor: "pointer", fontSize: "16px", fontWeight: "600", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)", position: "relative", overflow: "hidden" },
-    addButtonIcon: { marginRight: "12px", fontSize: "18px" },
-    ridersGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "24px" },
-    riderCard: { background: "linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)", backdropFilter: "blur(10px)", border: "1px solid rgba(148, 163, 184, 0.1)", borderRadius: "16px", padding: "32px", cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", position: "relative", overflow: "hidden" },
-    riderHeader: { display: "flex", alignItems: "center", marginBottom: "28px" },
-    riderAvatar: { width: "64px", height: "64px", borderRadius: "16px", background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "700", fontSize: "24px", marginRight: "20px", boxShadow: "0 10px 25px rgba(59, 130, 246, 0.4)", textTransform: "uppercase" },
-    riderInfo: { flex: 1 },
-    riderName: { fontSize: "22px", fontWeight: "700", color: "#ffffff", marginBottom: "6px", letterSpacing: "-0.01em" },
-    riderMobile: { fontSize: "15px", color: "#94a3b8", display: "flex", alignItems: "center" },
-    riderMobileIcon: { marginRight: "6px", fontSize: "14px", opacity: 0.7 },
-    riderDetails: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "28px", padding: "20px", background: "rgba(15, 23, 42, 0.4)", borderRadius: "12px", border: "1px solid rgba(148, 163, 184, 0.05)" },
-    detailColumn: { display: "flex", flexDirection: "column" },
-    detailLabel: { fontSize: "13px", color: "#64748b", marginBottom: "6px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em" },
-    detailValue: { fontSize: "18px", fontWeight: "700", color: "#e2e8f0" },
-    riderFooter: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "24px", borderTop: "1px solid rgba(148, 163, 184, 0.1)" },
-    statusBadge: { padding: "8px 16px", borderRadius: "20px", fontSize: "13px", fontWeight: "600", letterSpacing: "0.02em" },
-    statusActive: { background: "rgba(16, 185, 129, 0.1)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.2)" },
-    statusInactive: { background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" },
-    viewDetailsText: { fontSize: "14px", fontWeight: "600", color: "#3b82f6", display: "flex", alignItems: "center", transition: "all 0.2s ease" },
-    viewDetailsArrow: { marginLeft: "4px", transition: "transform 0.2s ease" },
-    loadingContainer: { display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "400px" },
-    loadingSpinner: { width: "48px", height: "48px", border: "4px solid rgba(59, 130, 246, 0.3)", borderTop: "4px solid #3b82f6", borderRadius: "50%", marginBottom: "24px" },
-    loadingText: { color: "#94a3b8", fontSize: "18px", fontWeight: "500", letterSpacing: "0.02em" },
-    errorContainer: { textAlign: "center", padding: "80px 40px", backgroundColor: "rgba(239, 68, 68, 0.05)", borderRadius: "24px", border: "1px solid rgba(239, 68, 68, 0.1)" },
-    errorTitle: { fontSize: "24px", fontWeight: "700", color: "#ef4444", marginBottom: "16px" },
-    errorText: { fontSize: "16px", color: "#94a3b8", maxWidth: "400px", margin: "0 auto", lineHeight: "1.6" },
-    emptyState: { textAlign: "center", padding: "100px 40px", backgroundColor: "rgba(30, 41, 59, 0.3)", borderRadius: "24px", border: "1px dashed rgba(148, 163, 184, 0.2)" },
-    emptyIcon: { fontSize: "64px", marginBottom: "24px", opacity: 0.5 },
-    emptyTitle: { fontSize: "24px", fontWeight: "700", color: "#ffffff", marginBottom: "12px" },
-    emptyText: { fontSize: "16px", color: "#94a3b8", maxWidth: "400px", margin: "0 auto" },
+/* ── Debt Modal (inline) ─────────────────────────────────────────────────── */
+function DebtModal({ rider, onClose, onSuccess }) {
+  const [form, setForm]       = useState({ amount: "", note: "" });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg]         = useState(null);   // {text, ok}
+  const [errs, setErrs]       = useState({});
+
+  const validate = () => {
+    const e = {};
+    if (!form.amount || Number(form.amount) <= 0) e.amount = "Enter a valid amount";
+    if (Number(form.amount) > 100000) e.amount = "Max ₹1,00,000";
+    if (!form.note.trim() || form.note.trim().length < 5) e.note = "Note must be ≥ 5 chars";
+    setErrs(e);
+    return !Object.keys(e).length;
   };
 
-  const SpinnerComponent = () => {
-    const [rotation, setRotation] = useState(0);
-    useEffect(() => { const interval = setInterval(() => setRotation(prev => (prev + 10) % 360), 50); return () => clearInterval(interval); }, []);
-    return <div style={{ ...styles.loadingSpinner, transform: `rotate(${rotation}deg)` }} />;
-  };
-
-  useEffect(() => {
-    fetchRiders();
-  }, []);
-
-  const fetchRiders = async () => {
+  const submit = async (type) => {
+    if (!validate()) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/rider/get-riders`);
-      setRiders(res.data?.data || []);
-      setError(null);
+      const ep = type === "debit" ? "debt-borrow" : "debt-repay";
+      await axios.put(`${BASE}/api/rider-payment/${ep}/${rider._id}`, {
+        amount: Number(form.amount), note: form.note.trim(),
+      });
+      setMsg({ text: `✅ Amount ${type === "debit" ? "debited" : "credited"} successfully!`, ok: true });
+      setForm({ amount: "", note: "" });
+      setTimeout(() => { setMsg(null); onSuccess(); }, 1800);
+    } catch (err) {
+      setMsg({ text: err.response?.data?.message || "Action failed. Try again.", ok: false });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={ms.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={ms.modal}>
+        {/* Header */}
+        <div style={ms.header}>
+          <div>
+            <div style={ms.avatar}>{rider.name?.slice(0, 2).toUpperCase()}</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={ms.riderName}>{rider.name}</div>
+            <div style={ms.riderId}>💼 Manage Debt</div>
+          </div>
+          <button style={ms.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        {/* Balance banner */}
+        {rider.balance !== undefined && (
+          <div style={ms.balanceBanner}>
+            <span style={ms.balanceLbl}>Current Payable Balance</span>
+            <span style={{ ...ms.balanceVal, color: rider.balance >= 0 ? "#10b981" : "#ef4444" }}>
+              ₹{rider.balance?.toLocaleString("en-IN") ?? "—"}
+            </span>
+          </div>
+        )}
+
+        {/* Feedback */}
+        {msg && (
+          <div style={{ ...ms.feedback, background: msg.ok ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", borderColor: msg.ok ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)", color: msg.ok ? "#10b981" : "#ef4444" }}>
+            {msg.text}
+          </div>
+        )}
+
+        {/* Form */}
+        <div style={ms.formGroup}>
+          <label style={ms.label}>Amount (₹) *</label>
+          <input
+            type="number" value={form.amount} placeholder="Enter amount"
+            onChange={e => { setForm(p => ({ ...p, amount: e.target.value })); setErrs(p => ({ ...p, amount: "" })); }}
+            style={{ ...ms.input, borderColor: errs.amount ? "#ef4444" : "rgba(148,163,184,0.2)" }}
+            disabled={loading}
+          />
+          {errs.amount && <div style={ms.err}>{errs.amount}</div>}
+        </div>
+        <div style={ms.formGroup}>
+          <label style={ms.label}>Note / Reason *</label>
+          <textarea
+            value={form.note} placeholder="Enter reason (min 5 chars)..."
+            onChange={e => { setForm(p => ({ ...p, note: e.target.value })); setErrs(p => ({ ...p, note: "" })); }}
+            style={{ ...ms.input, minHeight: 80, resize: "vertical" }}
+            disabled={loading} maxLength={200}
+          />
+          {errs.note && <div style={ms.err}>{errs.note}</div>}
+          <div style={ms.charCount}>{form.note.length}/200</div>
+        </div>
+
+        {/* Actions */}
+        <div style={ms.btnRow}>
+          <button
+            style={{ ...ms.btn, background: "linear-gradient(135deg,#ef4444,#dc2626)", boxShadow: "0 4px 16px rgba(239,68,68,0.3)", opacity: loading ? 0.7 : 1 }}
+            onClick={() => submit("debit")} disabled={loading}
+          >
+            {loading ? "…" : "💳 Borrow (Debit)"}
+          </button>
+          <button
+            style={{ ...ms.btn, background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 16px rgba(16,185,129,0.3)", opacity: loading ? 0.7 : 1 }}
+            onClick={() => submit("credit")} disabled={loading}
+          >
+            {loading ? "…" : "💵 Repay (Credit)"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ms = {
+  overlay:      { position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",backdropFilter:"blur(6px)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:16 },
+  modal:        { background:"linear-gradient(145deg,#1e293b,#0f172a)",border:"1px solid rgba(148,163,184,0.15)",borderRadius:20,padding:"32px 28px",width:"100%",maxWidth:440,boxShadow:"0 24px 64px rgba(0,0,0,0.5)" },
+  header:       { display:"flex",alignItems:"center",gap:16,marginBottom:20 },
+  avatar:       { width:48,height:48,borderRadius:14,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:18,flexShrink:0 },
+  riderName:    { fontSize:20,fontWeight:800,color:"#f1f5f9" },
+  riderId:      { fontSize:12,color:"#64748b",marginTop:2 },
+  closeBtn:     { background:"rgba(148,163,184,0.1)",border:"1px solid rgba(148,163,184,0.15)",borderRadius:8,color:"#94a3b8",width:32,height:32,cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 },
+  balanceBanner:{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(15,23,42,0.5)",border:"1px solid rgba(148,163,184,0.08)",borderRadius:12,padding:"14px 18px",marginBottom:20 },
+  balanceLbl:   { fontSize:13,color:"#64748b",fontWeight:600 },
+  balanceVal:   { fontSize:22,fontWeight:800 },
+  feedback:     { border:"1px solid",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:14,fontWeight:600 },
+  formGroup:    { marginBottom:18 },
+  label:        { display:"block",fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8 },
+  input:        { width:"100%",boxSizing:"border-box",padding:"13px 16px",fontSize:15,fontWeight:500,color:"#f1f5f9",background:"rgba(15,23,42,0.7)",border:"1px solid rgba(148,163,184,0.2)",borderRadius:10,outline:"none",fontFamily:"inherit" },
+  err:          { color:"#ef4444",fontSize:12,marginTop:5 },
+  charCount:    { textAlign:"right",fontSize:11,color:"#475569",marginTop:4 },
+  btnRow:       { display:"flex",gap:12,marginTop:24 },
+  btn:          { flex:1,padding:"13px 0",border:"none",borderRadius:10,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer" },
+};
+
+/* ── Main component ──────────────────────────────────────────────────────── */
+export default function RiderManagement() {
+  const navigate = useNavigate();
+  const [riders,  setRiders]  = useState([]);
+  const [amounts, setAmounts] = useState({}); // { [riderId]: { balance, totalCredit, totalDebit } }
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+  const [debtRider, setDebtRider] = useState(null);
+
+  /* ── Fetch riders list ── */
+  const fetchRiders = useCallback(async () => {
+    try {
+      setLoading(true); setError(null);
+      const res = await axios.get(`${BASE}/api/rider/get-riders`);
+      const list = res.data?.data || [];
+      setRiders(list);
+      // Fire off total-amount for all riders in parallel
+      fetchAllAmounts(list);
     } catch (err) {
       setError(err.message || "Failed to fetch riders");
     } finally {
       setLoading(false);
     }
+  }, []); // eslint-disable-line
+
+  /* ── Fetch total amounts for all riders ── */
+  const fetchAllAmounts = async (list) => {
+    const results = await Promise.allSettled(
+      list.map(r => axios.get(`${BASE}/api/rider-payment/total-amount/${r._id}`))
+    );
+    const map = {};
+    results.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        map[list[i]._id] = res.value.data?.data || { balance: 0, totalCredit: 0, totalDebit: 0 };
+      } else {
+        map[list[i]._id] = { balance: 0, totalCredit: 0, totalDebit: 0 };
+      }
+    });
+    setAmounts(map);
   };
 
-  const getInitials = (name) => {
-    return name ? name.split(" ").map(w => w.charAt(0)).join("").toUpperCase().slice(0, 2) : "NR";
-  };
+  useEffect(() => { fetchRiders(); }, [fetchRiders]);
 
-  const navigateToDetails = (id) => {
-    navigate(`/rider-details/${id}`);
-  };
+  const getInitials = (name) => (name ? name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) : "NR");
+  const fmtCur = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(n || 0);
 
-  if (loading) return <div style={styles.container}><main style={styles.main}><div style={styles.loadingContainer}><SpinnerComponent /><div style={styles.loadingText}>Loading riders...</div></div></main></div>;
-  if (error) return <div style={styles.container}><main style={styles.main}><div style={styles.errorContainer}><h3 style={styles.errorTitle}>Oops! Something went wrong</h3><p style={styles.errorText}>{error}</p><button onClick={fetchRiders} style={{ ...styles.addButton, marginTop: "24px", display: "inline-flex" }}>Try Again</button></div></main></div>;
+  const avatarColors = [
+    "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+    "linear-gradient(135deg,#8b5cf6,#6d28d9)",
+    "linear-gradient(135deg,#10b981,#059669)",
+    "linear-gradient(135deg,#f59e0b,#d97706)",
+    "linear-gradient(135deg,#ef4444,#dc2626)",
+    "linear-gradient(135deg,#06b6d4,#0891b2)",
+  ];
+
+  /* ── Loading ── */
+  if (loading) return (
+    <div style={S.page}>
+      <div style={S.centerMsg}>
+        <div style={S.spinner} />
+        <p style={{ color: "#64748b", marginTop: 16, fontSize: 16 }}>Loading riders…</p>
+      </div>
+    </div>
+  );
+
+  /* ── Error ── */
+  if (error) return (
+    <div style={S.page}>
+      <div style={S.centerMsg}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+        <p style={{ color: "#ef4444", fontSize: 18, marginBottom: 16 }}>{error}</p>
+        <button onClick={fetchRiders} style={S.retryBtn}>🔄 Retry</button>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={styles.container}>
-      <main style={styles.main}>
-        <div style={styles.headerSection}>
-          <div style={styles.titleSection}>
-            <h1 style={styles.mainTitle}>Rider Management</h1>
-            <p style={styles.subtitle}>Manage your delivery fleet, track performance, and handle rider information efficiently.</p>
+    <div style={S.page}>
+      <main style={S.main}>
+
+        {/* ── Header ── */}
+        <div style={S.topBar}>
+          <div>
+            <h1 style={S.title}>🛵 Rider Management</h1>
+            <p style={S.sub}>Manage your delivery fleet, track balances &amp; handle debt.</p>
           </div>
-          <div style={styles.buttonGroup}>
-            <button
-              style={styles.expenseButton}
-              onClick={() => navigate("/expence-profit")}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 30px rgba(59, 130, 246, 0.4)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 25px rgba(59, 130, 246, 0.3)"; }}
-            >
-              <span style={styles.addButtonIcon}>💼</span>
-              Company Expenses
+          <div style={S.headerBtns}>
+            <button style={S.expBtn} onClick={() => navigate("/expence-profit")}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+              💼 Company Expenses
             </button>
-            <button
-              style={styles.addButton}
-              onClick={() => navigate("/add-rider")}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 30px rgba(16, 185, 129, 0.4)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 25px rgba(16, 185, 129, 0.3)"; }}
-            >
-              <span style={styles.addButtonIcon}>+</span>
-              Add New Rider
+            <button style={S.addBtn} onClick={() => navigate("/add-rider")}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+              + Add Rider
             </button>
           </div>
         </div>
+
+        {/* ── Summary stat row ── */}
+        {riders.length > 0 && (
+          <div style={S.statBar}>
+            <div style={S.stat}>
+              <div style={S.statNum}>{riders.length}</div>
+              <div style={S.statLbl}>Total Riders</div>
+            </div>
+            <div style={S.stat}>
+              <div style={{ ...S.statNum, color: "#10b981" }}>
+                {riders.filter(r => r.status?.toLowerCase() === "active").length}
+              </div>
+              <div style={S.statLbl}>Active</div>
+            </div>
+            <div style={S.stat}>
+              <div style={{ ...S.statNum, color: "#fbbf24" }}>
+                {fmtCur(Object.values(amounts).reduce((s, a) => s + (a.balance || 0), 0))}
+              </div>
+              <div style={S.statLbl}>Total Payable</div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Empty state ── */}
         {riders.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>🛵</div>
-            <h2 style={styles.emptyTitle}>No Riders Found</h2>
-            <p style={styles.emptyText}>Get started by adding your first delivery rider to the system.</p>
+          <div style={S.empty}>
+            <div style={{ fontSize: 64, marginBottom: 16 }}>🛵</div>
+            <h2 style={{ color: "#fff", fontWeight: 700, marginBottom: 8 }}>No Riders Found</h2>
+            <p style={{ color: "#64748b" }}>Start by adding your first delivery rider.</p>
           </div>
         ) : (
-          <div style={styles.ridersGrid}>
-            {riders.map((rider) => (
-              <div
-                key={rider._id}
-                style={styles.riderCard}
-                onClick={() => navigateToDetails(rider._id)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.3)";
-                  e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.3)";
-                  const arrow = e.currentTarget.querySelector(".view-arrow");
-                  if (arrow) arrow.style.transform = "translateX(4px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.borderColor = "rgba(148, 163, 184, 0.1)";
-                  const arrow = e.currentTarget.querySelector(".view-arrow");
-                  if (arrow) arrow.style.transform = "translateX(0)";
-                }}
-              >
-                <div style={styles.riderHeader}>
-                  <div style={styles.riderAvatar}>{getInitials(rider.name)}</div>
-                  <div style={styles.riderInfo}>
-                    <div style={styles.riderName}>{rider.name}</div>
-                    <div style={styles.riderMobile}><span style={styles.riderMobileIcon}>📱</span>{Array.isArray(rider.mobileNumber) ? rider.mobileNumber.join(", ") : rider.mobileNumber}</div>
+          <div style={S.grid}>
+            {riders.map((rider, idx) => {
+              const amt = amounts[rider._id] || {};
+              const balance = amt.balance ?? null;
+              const isActive = rider.status?.toLowerCase() === "active";
+
+              return (
+                <div key={rider._id} style={S.card}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 24px 48px rgba(0,0,0,0.35)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.25)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = S.card.boxShadow; e.currentTarget.style.borderColor = S.card.border.replace("border:","").trim(); }}
+                >
+                  {/* ── Card Header ── */}
+                  <div style={S.cardHead}>
+                    <div style={{ ...S.avatar, background: avatarColors[idx % avatarColors.length] }}>
+                      {getInitials(rider.name)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={S.riderName}>{rider.name}</div>
+                      <div style={S.riderPhone}>📱 {Array.isArray(rider.mobileNumber) ? rider.mobileNumber.join(", ") : rider.mobileNumber}</div>
+                    </div>
+                    <span style={{ ...S.badge, ...(isActive ? S.badgeGreen : S.badgeRed) }}>
+                      {isActive ? "● Active" : "● Inactive"}
+                    </span>
+                  </div>
+
+              
+
+                  {/* ── Payable balance banner ── */}
+                  <div style={S.payableBanner}>
+                    <span style={S.payableLbl}>💰 Payable Amount</span>
+                    <span style={{ ...S.payableVal, color: balance !== null ? (balance >= 0 ? "#10b981" : "#ef4444") : "#64748b" }}>
+                      {balance !== null ? fmtCur(balance) : "Loading…"}
+                    </span>
+                  </div>
+
+                  {/* ── Action buttons: 3 in a row ── */}
+                  <div style={S.cardActions}>
+                    <button style={S.histBtn}
+                      onClick={() => navigate(`/rider-delivery-history/${rider._id}`)}>
+                      📦 Delivery History
+                    </button>
+                    <button style={S.paidBtn}
+                      onClick={() => navigate(`/rider-paid-history/${rider._id}`)}>
+                      💰 Payment History
+                    </button>
+                    <button style={S.debtBtn}
+                      onClick={() => setDebtRider({ ...rider, balance })}>
+                      💳 Manage Debt
+                    </button>
                   </div>
                 </div>
-                <div style={styles.riderDetails}>
-                  <div style={styles.detailColumn}>
-                    <span style={styles.detailLabel}>Rate/Parcel</span>
-                    <span style={styles.detailValue}>₹{rider.perParcelRate}</span>
-                  </div>
-                  <div style={styles.detailColumn}>
-                    <span style={styles.detailLabel}>Joined Date</span>
-                    <span style={styles.detailValue}>{new Date(rider.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  </div>
-                </div>
-                <div style={styles.riderFooter}>
-                  <span style={{ ...styles.statusBadge, ...(rider.status?.toLowerCase() === "active" ? styles.statusActive : styles.statusInactive) }}>
-                    {rider.status?.toLowerCase() === "active" ? "● Active" : "● Inactive"}
-                  </span>
-                  <div style={styles.viewDetailsText}>
-                    View Details
-                    <span className="view-arrow" style={styles.viewDetailsArrow}>→</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
+
+      {/* ── Debt Modal ── */}
+      {debtRider && (
+        <DebtModal
+          rider={debtRider}
+          onClose={() => setDebtRider(null)}
+          onSuccess={() => { setDebtRider(null); fetchRiders(); }}
+        />
+      )}
     </div>
   );
-};
+}
 
-export default RiderManagment;
+/* ── Styles ────────────────────────────────────────────────────────────────── */
+const S = {
+  page:    { minHeight:"100vh", background:"linear-gradient(135deg,#0f172a 0%,#1e293b 100%)", fontFamily:'"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' },
+  main:    { maxWidth:1400, margin:"0 auto", padding:"48px 32px" },
+
+  centerMsg: { display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh" },
+  spinner:   { width:44,height:44,border:"4px solid rgba(139,92,246,0.25)",borderTop:"4px solid #8b5cf6",borderRadius:"50%",animation:"spin 0.8s linear infinite" },
+  retryBtn:  { padding:"12px 28px",background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer",fontSize:15 },
+
+  topBar:     { display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,flexWrap:"wrap",gap:20 },
+  title:      { fontSize:40,fontWeight:900,background:"linear-gradient(135deg,#fff 0%,#e2e8f0 70%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",letterSpacing:"-0.02em",margin:0,marginBottom:8 },
+  sub:        { fontSize:16,color:"#64748b",margin:0 },
+  headerBtns: { display:"flex",gap:12,alignItems:"center",flexShrink:0 },
+  expBtn:     { padding:"13px 22px",background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",color:"#fff",border:"none",borderRadius:11,fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:"0 6px 20px rgba(59,130,246,0.3)",transition:"transform 0.15s" },
+  addBtn:     { padding:"13px 22px",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",border:"none",borderRadius:11,fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:"0 6px 20px rgba(16,185,129,0.3)",transition:"transform 0.15s" },
+
+  statBar:  { display:"flex",gap:16,marginBottom:36,flexWrap:"wrap" },
+  stat:     { flex:"1 1 140px",background:"rgba(30,41,59,0.7)",border:"1px solid rgba(148,163,184,0.1)",borderRadius:14,padding:"18px 22px" },
+  statNum:  { fontSize:26,fontWeight:800,color:"#f1f5f9",lineHeight:1 },
+  statLbl:  { fontSize:12,color:"#475569",fontWeight:600,marginTop:6,textTransform:"uppercase",letterSpacing:"0.05em" },
+
+  empty: { textAlign:"center",padding:"80px 40px",border:"1px dashed rgba(148,163,184,0.15)",borderRadius:20 },
+
+  grid:  { display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(360px,1fr))",gap:22 },
+
+  card: {
+    background:"linear-gradient(145deg,rgba(30,41,59,0.85),rgba(15,23,42,0.95))",
+    backdropFilter:"blur(12px)",
+    border:"1px solid rgba(148,163,184,0.1)",
+    borderRadius:18,
+    padding:"26px 24px",
+    cursor:"default",
+    transition:"all 0.25s cubic-bezier(0.4,0,0.2,1)",
+    boxShadow:"0 4px 24px rgba(0,0,0,0.2)",
+    display:"flex",flexDirection:"column",gap:0,
+  },
+
+  cardHead: { display:"flex",alignItems:"center",gap:16,marginBottom:20 },
+  avatar:   { width:56,height:56,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:20,flexShrink:0,boxShadow:"0 8px 20px rgba(0,0,0,0.25)" },
+  riderName:  { fontSize:18,fontWeight:800,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" },
+  riderPhone: { fontSize:13,color:"#64748b",marginTop:3 },
+  badge:      { padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:700,whiteSpace:"nowrap",flexShrink:0 },
+  badgeGreen: { background:"rgba(16,185,129,0.12)",color:"#10b981",border:"1px solid rgba(16,185,129,0.25)" },
+  badgeRed:   { background:"rgba(239,68,68,0.12)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.25)" },
+
+  infoStrip:    { display:"flex",gap:20,marginBottom:14 },
+  infoStripLbl: { fontSize:10,color:"#475569",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4 },
+  infoStripVal: { fontSize:14,fontWeight:700,color:"#cbd5e1" },
+
+  payableBanner: { display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(15,23,42,0.55)",border:"1px solid rgba(148,163,184,0.08)",borderRadius:12,padding:"14px 18px",marginBottom:16 },
+  payableLbl:    { fontSize:13,color:"#64748b",fontWeight:600 },
+  payableVal:    { fontSize:22,fontWeight:900 },
+
+  cardActions: { display:"flex",gap:8 },
+  histBtn: { flex:1,padding:"10px 2px",background:"rgba(59,130,246,0.1)",border:"1px solid rgba(59,130,246,0.2)",borderRadius:10,color:"#60a5fa",fontWeight:700,fontSize:12,cursor:"pointer",transition:"all 0.15s" },
+  paidBtn: { flex:1,padding:"10px 2px",background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:10,color:"#34d399",fontWeight:700,fontSize:12,cursor:"pointer",transition:"all 0.15s" },
+  debtBtn: { flex:1,padding:"10px 2px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:10,color:"#fbbf24",fontWeight:700,fontSize:12,cursor:"pointer",transition:"all 0.15s" },
+};

@@ -4,31 +4,27 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QRCode from "qrcode";
 import ScanUndeliveredModal from "./ScanUndeliveredModal";
-import CashManagementModal from "./CashManagementModal";
-import CompleteCashModal from "./CompleteCashModal";
 
 // Status → tab mapping
 const TAB_STATUSES = {
-  parcels:   [0, 1, 2],          // Fetched / Seat Begin / Seat InProgress
-  cash:      [3, 4, 5],          // Seat Closed / Cash Begin / Cash Receiving
-  completed: [6, 7, 8],          // Completed / Parcels Missing / Sort Cash
+  parcels:   [0, 1, 2],        // Fetched / Scanning / In Progress
+  completed: [3, 4, 5, 6, 7, 8], // Submitted and beyond
 };
 
 const STATUS_LABEL = {
-  0: "Fetched", 1: "Scanning", 2: "Seat InProgress",
+  0: "Fetched", 1: "Scanning", 2: "In Progress",
   3: "Submitted", 4: "Cash Begin", 5: "Cash Receiving",
   6: "Completed", 7: "Parcels Missing", 8: "Sort Cash",
 };
 
 const STATUS_COLOR = {
   0: "#64748b", 1: "#f59e0b", 2: "#3b82f6",
-  3: "#8b5cf6", 4: "#f59e0b", 5: "#a855f7",
+  3: "#10b981", 4: "#f59e0b", 5: "#a855f7",
   6: "#10b981", 7: "#f87171", 8: "#94a3b8",
 };
 
 const TABS = [
   { key: "parcels",   label: "📦 Parcels Management" },
-  { key: "cash",      label: "💰 Cash Management"    },
   { key: "completed", label: "✅ Completed"           },
 ];
 
@@ -200,8 +196,6 @@ export default function DispatchHistory() {
     new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
-  const [isCashModalOpen, setIsCashModalOpen] = useState(false);
-  const [isCompleteCashOpen, setIsCompleteCashOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
   const limit = 50;
 
@@ -383,10 +377,8 @@ export default function DispatchHistory() {
           <table style={S.table}>
             <thead>
               <tr>
-                {activeTab === "cash" ? (
-                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Sort COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
-                ) : activeTab === "completed" ? (
-                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Expected COD", "Received Cash", "Online", "Sort COD", "Status"].map(h => <th key={h} style={S.th}>{h}</th>)
+                {activeTab === "completed" ? (
+                  ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Undelivered", "COD", "Status", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
                 ) : (
                   ["Dispatch ID", "Name", "Pkgs", "Delivered", "RVP", "Undelivered", "RVP Pending", "COD", "Action"].map(h => <th key={h} style={S.th}>{h}</th>)
                 )}
@@ -438,41 +430,33 @@ export default function DispatchHistory() {
                       </>
                     )}
 
-                    {activeTab === "cash" && (
-                      <>
-                        <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
-                          {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
-                        </td>
-                        <td style={S.td}><Num n={d.receivedCash} good /></td>
-                        <td style={S.td}><Num n={d.receivedOnline} good /></td>
-                        <td style={S.td}>{d.sortCOD > 0 ? `₹${d.sortCOD}` : "—"}</td>
-                        <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
-                           <div style={{ display: "flex", gap: "8px" }}>
-                             <button onClick={() => { setSelectedDispatch(d); setIsCashModalOpen(true); }} style={{...S.manageBtn, background: d.status === 5 ? "rgba(100,116,139,0.2)" : S.manageBtn.background, color: d.status === 5 ? "#94a3b8" : "#fff", boxShadow: d.status === 5 ? "none" : S.manageBtn.boxShadow }}>
-                               Manage
-                             </button>
-                             {d.status === 5 && (
-                               <button onClick={() => { setSelectedDispatch(d); setIsCompleteCashOpen(true); }} style={S.completeBtn}>
-                                 Complete
-                               </button>
-                             )}
-                           </div>
-                        </td>
-                      </>
-                    )}
-
                     {activeTab === "completed" && (
                       <>
+                        {/* Undelivered */}
+                        <td style={S.td}><Num n={d.undeliveredCount} bad /></td>
+                        {/* COD */}
                         <td style={{ ...S.td, color: "#fbbf24", fontWeight: 700 }}>
                           {d.expected_cod_amount > 0 ? `₹${d.expected_cod_amount}` : <span style={{ color: "#64748b" }}>0</span>}
                         </td>
-                        <td style={S.td}><Num n={d.receivedCash} good /></td>
-                        <td style={S.td}><Num n={d.receivedOnline} good /></td>
-                        <td style={S.td}>{d.sortCOD > 0 ? `₹${d.sortCOD}` : "—"}</td>
+                        {/* Status badge */}
                         <td style={S.td}>
                           <span style={{ padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${STATUS_COLOR[d.status]}22`, color: STATUS_COLOR[d.status] ?? "#94a3b8", border: `1px solid ${STATUS_COLOR[d.status]}55` }}>
                             {STATUS_LABEL[d.status] || `State ${d.status}`}
                           </span>
+                        </td>
+                        {/* Action — re-open modal to view scanned items */}
+                        <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
+                            style={{
+                              padding: "5px 12px", border: "none", borderRadius: 7,
+                              background: "linear-gradient(135deg,#10b981,#059669)",
+                              color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                              boxShadow: "0 2px 8px rgba(16,185,129,0.3)", whiteSpace: "nowrap",
+                            }}
+                          >
+                            ✅ View / Edit
+                          </button>
                         </td>
                       </>
                     )}
@@ -506,32 +490,6 @@ export default function DispatchHistory() {
         }}
         dispatch={selectedDispatch}
       />
-
-      {/* Cash Management Modal (Step 1) */}
-      {isCashModalOpen && (
-        <CashManagementModal
-          isOpen={isCashModalOpen}
-          onClose={() => {
-            setIsCashModalOpen(false);
-            setSelectedDispatch(null);
-            fetchHistory(filterDate, page);
-          }}
-          dispatch={selectedDispatch}
-        />
-      )}
-
-      {/* Complete Cash Modal (Step 2) */}
-      {isCompleteCashOpen && (
-        <CompleteCashModal
-          isOpen={isCompleteCashOpen}
-          onClose={() => {
-            setIsCompleteCashOpen(false);
-            setSelectedDispatch(null);
-            fetchHistory(filterDate, page);
-          }}
-          dispatch={selectedDispatch}
-        />
-      )}
     </div>
   );
 }
@@ -609,10 +567,9 @@ function ScanRowButton({ status, hasItems, onClick, onComplete }) {
   }
 
   const cfg = {
-    0: { label: "📦 Scan Undelivered", bg: "linear-gradient(135deg,#3b82f6,#2563eb)", shadow: "rgba(59,130,246,0.3)" },
+    0: { label: "📦 Scan Undelivered", bg: "linear-gradient(135deg,#3b82f6,#2563eb)",   shadow: "rgba(59,130,246,0.3)" },
     1: { label: "🔄 Continue Scanning", bg: "linear-gradient(135deg,#f59e0b,#d97706)", shadow: "rgba(245,158,11,0.3)" },
     2: { label: "🔄 Continue Scanning", bg: "linear-gradient(135deg,#f59e0b,#d97706)", shadow: "rgba(245,158,11,0.3)" },
-    3: { label: "✅ Submitted",          bg: "linear-gradient(135deg,#10b981,#059669)", shadow: "rgba(16,185,129,0.3)" },
   };
   const c = cfg[status] ?? cfg[0];
   return (
@@ -620,8 +577,7 @@ function ScanRowButton({ status, hasItems, onClick, onComplete }) {
       onClick={onClick}
       style={{
         padding: "5px 12px", border: "none", borderRadius: 7,
-        background: c.bg,
-        color: "#fff",
+        background: c.bg, color: "#fff",
         fontSize: 12, fontWeight: 700, cursor: "pointer",
         boxShadow: `0 2px 8px ${c.shadow}`,
         whiteSpace: "nowrap", transition: "all 0.15s",
@@ -658,18 +614,7 @@ const S = {
     boxShadow: "0 4px 12px rgba(16,185,129,0.35)",
     letterSpacing: "0.3px", height: 40,
   },
-  manageBtn: {
-    padding: "6px 14px", border: "none", borderRadius: 8,
-    background: "linear-gradient(135deg,#8b5cf6,#6d28d9)",
-    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(139,92,246,0.3)", transition: "all 0.15s"
-  },
-  completeBtn: {
-    padding: "6px 14px", border: "none", borderRadius: 8,
-    background: "linear-gradient(135deg,#10b981,#059669)",
-    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(16,185,129,0.3)", transition: "all 0.15s"
-  },
+
   statRow:   { display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" },
   stat:      { flex: "1 1 120px", background: "rgba(30,41,59,0.7)", border: "1px solid rgba(148,163,184,0.12)", borderRadius: 10, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 3 },
   statLbl:   { fontSize: 11, color: "#475569", fontWeight: 700, textTransform: "uppercase" },

@@ -92,7 +92,7 @@ const RiderPaidHistory = () => {
   return (
     <div style={styles.container}>
       <main style={styles.main}>
-        <button style={styles.backButton} onClick={() => navigate(`/rider-details/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back</button>
+        <button style={styles.backButton} onClick={() => navigate(`/rider-management`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back</button>
         <div style={styles.headerSection}>
           <div><h1 style={styles.mainTitle}>Payment History</h1><p style={styles.subtitle}>Complete payment and transaction history records</p></div>
           <div style={styles.filterSection}>
