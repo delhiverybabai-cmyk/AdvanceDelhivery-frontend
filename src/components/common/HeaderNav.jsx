@@ -2,12 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 const navItems = [
-  { path: "/", label: "Overview" },
   { path: "/live-dispatch", label: "Live Dispatch" },
   { path: "/dispatch-history", label: "Dispatch History" },
   { path: "/rider-management", label: "Rider Management" },
+  { path: "/", label: "Overview" },
   { path: "/token-management", label: "Token Management" },
-  { path: "/pickup-qc-status", label: "Pickup QC Status" },
 ];
 
 const styles = {
@@ -165,6 +164,8 @@ const HeaderNav = () => {
       navigate("/bulk-gi");
     } else if (action === "waybill-formater") {
       navigate("/waybill-formater");
+    } else if (action === "pickup-qc-status") {
+      navigate("/pickup-qc-status");
     }
   };
 
@@ -172,8 +173,12 @@ const HeaderNav = () => {
     <header style={styles.header}>
       <div style={styles.headerContent}>
         <div style={styles.leftSection}>
-          <span style={styles.headerTitle}>DeliveryPro</span>
-          <span style={styles.headerSubtitle}>Management Console</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div>
+              <span style={{ ...styles.headerTitle, color: "#f8fafc" }}>Advance</span>
+              <span style={{ ...styles.headerTitle, color: "#10b981", marginLeft: 2 }}>Delhivery</span>
+            </div>
+          </div>
         </div>
         <nav style={styles.nav}>
           {navItems.map((item) => (
@@ -216,6 +221,21 @@ const HeaderNav = () => {
           {/* Dropdown Menu */}
           {showDropdown && (
             <div style={styles.dropdown}>
+              <div
+                style={{
+                  ...styles.dropdownItem,
+                  ...(hoveredItem === "pickup-qc-status"
+                    ? styles.dropdownItemHover
+                    : {}),
+                }}
+                onMouseEnter={() => setHoveredItem("pickup-qc-status")}
+                onMouseLeave={() => setHoveredItem(null)}
+                onClick={() => handleDropdownAction("pickup-qc-status")}
+              >
+                <span>🔍</span>
+                <span>Pickup QC</span>
+              </div>
+              <div style={styles.dropdownDivider} />
               <div
                 style={{
                   ...styles.dropdownItem,

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const RiderDeliveryHistoryList = () => {
   const { riderId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRecordMode = location.pathname.endsWith("/record");
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -146,7 +148,9 @@ const RiderDeliveryHistoryList = () => {
           <div><h1 style={styles.mainTitle}>Delivery History</h1><p style={styles.subtitle}>Complete delivery and payment history records</p></div>
           <div style={styles.controlsSection}>
             <button style={styles.sortButton} onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}>{sortOrder === "asc" ? "↑" : "↓"} Sort {sortOrder === "asc" ? "Ascending" : "Descending"}</button>
-            <button style={styles.addHistoryButton} onClick={() => navigate(`/add-rider-delivery-history/${riderId}`)}><span style={{ marginRight: "8px", fontSize: "18px" }}>+</span>Add History</button>
+            {isRecordMode && (
+              <button style={styles.addHistoryButton} onClick={() => navigate(`/add-rider-delivery-history/${riderId}`)}><span style={{ marginRight: "8px", fontSize: "18px" }}>+</span>Add History</button>
+            )}
           </div>
         </div>
         {summary && (
@@ -164,7 +168,7 @@ const RiderDeliveryHistoryList = () => {
           <div style={styles.tableContainer}>
             <div style={{ overflowX: "auto" }}>
               <table style={styles.table}>
-                <thead><tr>{["Date Created","Assigned Parcels","Successful Delivered","Successful RVP","Canceled by Code","Returned to Hub","Cash Deposited","Rider Earning","Action"].map(h => <th key={h} style={styles.th}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Date Created","Assigned Parcels","Successful Delivered","Successful RVP","Canceled by Code","Returned to Hub","Cash Deposited","Rider Earning"].concat(isRecordMode ? ["Action"] : []).map(h => <th key={h} style={styles.th}>{h}</th>)}</tr></thead>
                 <tbody>
                   {historyData.map((record, index) => (
                     <tr key={record._id || index} style={{ ...styles.tableRow, backgroundColor: index % 2 === 0 ? "rgba(15,23,42,0.2)" : "rgba(30,41,59,0.1)" }} onMouseEnter={e => handleRowHover(e, true)} onMouseLeave={e => handleRowHover(e, false)}>
@@ -176,9 +180,11 @@ const RiderDeliveryHistoryList = () => {
                       <td style={{ ...styles.td, ...styles.returnValue }}>{record.parcelsReturnInHub || 0}</td>
                       <td style={{ ...styles.td, ...styles.earningsValue }}>{formatCurrency(record.cashedDeposited)}</td>
                       <td style={{ ...styles.td, ...styles.earningsValue }}>{formatCurrency(record.riderEarning)}</td>
-                      <td style={styles.td}>
-                        <button style={styles.sortButton} onClick={() => openUpdateModal(record)}>✏️ Update</button>
-                      </td>
+                      {isRecordMode && (
+                        <td style={styles.td}>
+                          <button style={styles.sortButton} onClick={() => openUpdateModal(record)}>✏️ Update</button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

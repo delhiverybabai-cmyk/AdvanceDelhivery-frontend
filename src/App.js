@@ -31,23 +31,28 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route path="/" element={<OverViewManagment />} />
           <Route path="rider-management" element={<RiderManagement />} />
+          <Route path="rider-management/record" element={<RiderManagement />} />
           <Route path="add-rider" element={<AddNewRider />} />
           
           {/* New Rider Management Routes */}
           <Route path="rider-details/:id" element={<RiderDetails />} />
           <Route path="update-rider/:id" element={<UpdateRider />} />
           <Route path="rider-delivery-history/:riderId" element={<RiderDeliveryHistoryList />} />
+          <Route path="rider-delivery-history/:riderId/record" element={<RiderDeliveryHistoryList />} />
           <Route path="add-rider-delivery-history/:riderId" element={<AddRiderDeliveryHistory />} />
           <Route path="update-rider-delivery-history/:historyId/:riderId" element={<UpdateDeliveryHistory />} />
           <Route path="rider-debt/:riderId" element={<RiderDebtManagement />} />
           <Route path="rider-paid-history/:riderId" element={<RiderPaidHistory />} />
+          <Route path="rider-paid-history/:riderId/record" element={<RiderPaidHistory />} />
 
           {/* New Expense Routes */}
           <Route path="expence-profit" element={<ExpenseProfitList />} />
           <Route path="add-expence-profit" element={<AddExpenseProfit />} />
 
           <Route path="live-dispatch" element={<LiveDispatch />} />
+          <Route path="live-dispatch/record" element={<LiveDispatch />} />
           <Route path="dispatch-history" element={<DispatchHistory />} />
+          <Route path="dispatch-history/record" element={<DispatchHistory />} />
           <Route path="dispatch-details" element={<DispatchDetail />} />
           <Route path="token-management" element={<TokenManagement />} />
           <Route path="bulk-gi" element={<BulkGenricIncoming />} />

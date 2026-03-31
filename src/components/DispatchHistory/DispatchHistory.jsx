@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QRCode from "qrcode";
 import ScanUndeliveredModal from "./ScanUndeliveredModal";
+import RecordEntryModal from "./RecordEntryModal";
 
 // Status → tab mapping
 const TAB_STATUSES = {
@@ -184,6 +186,8 @@ const printPickupLabels = (waybills) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function DispatchHistory() {
+  const location = useLocation();
+  const showRecordOption = location.pathname.includes("/dispatch-history/record");
   const [allDispatches, setAllDispatches] = useState([]);
   const [summary,       setSummary]       = useState(null);
   const [loading,       setLoading]       = useState(false);
@@ -193,10 +197,12 @@ export default function DispatchHistory() {
   const [page,          setPage]          = useState(1);
   const [totalPages,    setTotalPages]    = useState(1);
   const [filterDate,    setFilterDate]    = useState(
-    new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0]
+    new Date(Date.now() + 5.5 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [selectedDispatch, setSelectedDispatch] = useState(null);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [selectedRecordDispatch, setSelectedRecordDispatch] = useState(null);
   const limit = 50;
 
   const fetchHistory = useCallback(async (date, pg) => {
@@ -420,12 +426,14 @@ export default function DispatchHistory() {
                         </td>
                         {/* Action — Scan Undelivered */}
                         <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
-                          <ScanRowButton
-                            status={d.status}
-                            hasItems={(d.undelivered?.length || 0) + (d.pickupNotCompleted?.length || 0) > 0}
-                            onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
-                            onComplete={() => completeZeroItems(d._id)}
-                          />
+                          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                            <ScanRowButton
+                              status={d.status}
+                              hasItems={(d.undelivered?.length || 0) > 0}
+                              onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
+                              onComplete={() => completeZeroItems(d._id)}
+                            />
+                          </div>
                         </td>
                       </>
                     )}
@@ -444,19 +452,48 @@ export default function DispatchHistory() {
                             {STATUS_LABEL[d.status] || `State ${d.status}`}
                           </span>
                         </td>
-                        {/* Action — re-open modal to view scanned items */}
+                        {/* Action — re-open modal to view scanned items and Record Entry */}
                         <td style={{ ...S.td, whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
-                          <button
-                            onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
-                            style={{
-                              padding: "5px 12px", border: "none", borderRadius: 7,
-                              background: "linear-gradient(135deg,#10b981,#059669)",
-                              color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                              boxShadow: "0 2px 8px rgba(16,185,129,0.3)", whiteSpace: "nowrap",
-                            }}
-                          >
-                            ✅ View / Edit
-                          </button>
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-start" }}>
+                            <button
+                              onClick={() => { setSelectedDispatch(d); setIsScanModalOpen(true); }}
+                              style={{
+                                padding: "5px 12px", border: "none", borderRadius: 7,
+                                background: "linear-gradient(135deg,#10b981,#059669)",
+                                color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                boxShadow: "0 2px 8px rgba(16,185,129,0.3)", whiteSpace: "nowrap",
+                              }}
+                            >
+                              ✅ View / Edit
+                            </button>
+                            {showRecordOption && (
+                              !d.isHistoryRecorded ? (
+                                <button
+                                  onClick={() => { setSelectedRecordDispatch(d); setIsRecordModalOpen(true); }}
+                                  style={{
+                                    padding: "5px 12px", border: "none", borderRadius: 7,
+                                    background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+                                    color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                    boxShadow: "0 2px 8px rgba(59,130,246,0.3)", whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  🧾 Record
+                                </button>
+                              ) : (
+                                <div
+                                  style={{
+                                    padding: "5px 12px", border: "1px solid rgba(148,163,184,0.3)", borderRadius: 7,
+                                    background: "rgba(30,41,59,0.5)",
+                                    color: "#94a3b8", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+                                    display: "flex", alignItems: "center", justifyContent: "center"
+                                  }}
+                                  title="This entry has already been recorded."
+                                >
+                                  🔒 Recorded
+                                </div>
+                              )
+                            )}
+                          </div>
                         </td>
                       </>
                     )}
@@ -489,6 +526,18 @@ export default function DispatchHistory() {
           fetchHistory(filterDate, page);
         }}
         dispatch={selectedDispatch}
+      />
+
+      {/* Record Entry Modal - Submit to rider payment ledger */}
+      <RecordEntryModal
+        isOpen={isRecordModalOpen}
+        onClose={() => {
+          setIsRecordModalOpen(false);
+          setSelectedRecordDispatch(null);
+        }}
+        dispatch={selectedRecordDispatch}
+        filterDate={filterDate}
+        onSuccess={() => fetchHistory(filterDate, page)}
       />
     </div>
   );
@@ -624,9 +673,9 @@ const S = {
   tabBadge:  { padding: "1px 7px", borderRadius: 20, fontSize: 11, fontWeight: 700 },
   tableWrap: { background: "rgba(30,41,59,0.6)", border: "1px solid rgba(148,163,184,0.12)", borderRadius: 14, padding: 18, overflowX: "auto" },
   table:     { width: "100%", borderCollapse: "separate", borderSpacing: "0 5px" },
-  th:        { padding: "9px 13px", color: "#475569", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid rgba(148,163,184,0.08)", whiteSpace: "nowrap" },
+  th:        { padding: "9px 13px", color: "#475569", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid rgba(148,163,184,0.08)", whiteSpace: "nowrap", textAlign: "left" },
   tr:        { cursor: "pointer", transition: "background .12s" },
-  td:        { padding: "12px 13px", fontSize: 13, color: "#e2e8f0" },
+  td:        { padding: "12px 13px", fontSize: 13, color: "#e2e8f0", textAlign: "left" },
   empty:     { textAlign: "center", padding: 44, color: "#475569" },
   pgBtn:     { padding: "7px 14px", background: "rgba(30,41,59,0.8)", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 6, color: "#e2e8f0", cursor: "pointer", fontSize: 13 },
 };

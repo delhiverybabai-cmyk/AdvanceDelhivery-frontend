@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const BASE = process.env.REACT_APP_BASE_URL;
 
@@ -135,6 +135,8 @@ const ms = {
 /* ── Main component ──────────────────────────────────────────────────────── */
 export default function RiderManagement() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRecordMode = location.pathname.endsWith("/record");
   const [riders,  setRiders]  = useState([]);
   const [amounts, setAmounts] = useState({}); // { [riderId]: { balance, totalCredit, totalDebit } }
   const [loading, setLoading] = useState(true);
@@ -307,10 +309,12 @@ export default function RiderManagement() {
                       onClick={() => navigate(`/rider-paid-history/${rider._id}`)}>
                       💰 Payment History
                     </button>
-                    <button style={S.debtBtn}
-                      onClick={() => setDebtRider({ ...rider, balance })}>
-                      💳 Manage Debt
-                    </button>
+                    {isRecordMode && (
+                      <button style={S.debtBtn}
+                        onClick={() => setDebtRider({ ...rider, balance })}>
+                        💳 Manage Debt
+                      </button>
+                    )}
                   </div>
                 </div>
               );

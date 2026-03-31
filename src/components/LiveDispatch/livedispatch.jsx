@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import WipBulkDispatchModel from "../BulkManagment/WipBulkDispatchModel";
 import AddVehicleModal from "./AddVehicleModal";
 import NotAttemptModal from "./NotAttemptModal";
@@ -211,6 +211,8 @@ const styles = {
 
 function LiveDispatch() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRecordMode = location.pathname.endsWith("/record");
   const [showModal, setShowModal] = useState(false);
   const [ undeliveredWaybills, setUndeliveredWaybills] = useState([]);
   const [pickups, setpickups] = useState([]);
@@ -767,19 +769,23 @@ function LiveDispatch() {
               Copy Undelivered
             </button>
 
-            <button 
-              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)"}}
-              onClick={handleBulkScanEOD}
-            >
-              Scan EOD
-            </button>
+            {isRecordMode && (
+              <>
+                <button 
+                  style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)"}}
+                  onClick={handleBulkScanEOD}
+                >
+                  Scan EOD
+                </button>
 
-            <button 
-              style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"}}
-              onClick={handleBulkForceConsigneeAll}
-            >
-              Mark Unavailable
-            </button>
+                <button 
+                  style={{...styles.actionBtn, padding: "10px 16px", background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"}}
+                  onClick={handleBulkForceConsigneeAll}
+                >
+                  Mark Unavailable
+                </button>
+              </>
+            )}
           </div>
         )}
 

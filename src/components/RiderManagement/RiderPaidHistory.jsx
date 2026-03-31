@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const BASE = process.env.REACT_APP_BASE_URL;
 
@@ -100,6 +100,8 @@ const ms = {
 export default function RiderPaidHistory() {
   const { riderId } = useParams();
   const navigate    = useNavigate();
+  const location    = useLocation();
+  const isRecordMode = location.pathname.endsWith("/record");
 
   const [history,    setHistory]    = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -223,11 +225,13 @@ export default function RiderPaidHistory() {
             </div>
             <div style={S.balCardSub}>{history.length} transactions total</div>
           </div>
-          <button style={S.manageDebtBtn} onClick={() => setDebtOpen(true)}
-            onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-            💳 Manage Debt
-          </button>
+          {isRecordMode && (
+            <button style={S.manageDebtBtn} onClick={() => setDebtOpen(true)}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+              💳 Manage Debt
+            </button>
+          )}
         </div>
 
         {/* ── Table ── */}
