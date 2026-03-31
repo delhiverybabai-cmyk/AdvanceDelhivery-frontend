@@ -241,43 +241,45 @@ export default function RiderPaidHistory() {
           <div style={S.tableWrap}>
             {/* Table header */}
             <div style={S.tableHead}>
-              <div style={{ ...S.th, flex: "0 0 44px" }}>#</div>
-              <div style={{ ...S.th, flex: "0 0 130px" }}>Date</div>
-              <div style={{ ...S.th, flex: "0 0 90px" }}>Type</div>
+              <div style={{ ...S.th, flex: "0 0 50px" }}>#</div>
+              <div style={{ ...S.th, flex: "0 0 160px" }}>Date</div>
+              <div style={{ ...S.th, flex: "0 0 100px" }}>Type</div>
               <div style={{ ...S.th, flex: 1 }}>Note / Reason</div>
-              <div style={{ ...S.th, flex: "0 0 130px", textAlign: "right" }}>Amount</div>
-              <div style={{ ...S.th, flex: "0 0 140px", textAlign: "right" }}>Balance After</div>
+              <div style={{ ...S.th, flex: "0 0 150px", textAlign: "right" }}>Amount</div>
+              <div style={{ ...S.th, flex: "0 0 160px", textAlign: "right" }}>Balance After</div>
             </div>
 
             {/* Rows */}
             <div style={S.tableBody}>
-              {withBalance.map((t, idx) => {
+              {[...withBalance].reverse().map((t, index) => {
                 const isCredit = t.type === "credit";
+                // calculate proper alternating colors and correct row number descending
+                const num = withBalance.length - index;
                 return (
                   <div key={t._id} style={{
                     ...S.row,
-                    background: idx % 2 === 0 ? "rgba(15,23,42,0.35)" : "rgba(30,41,59,0.25)",
+                    background: index % 2 === 0 ? "rgba(15,23,42,0.35)" : "rgba(30,41,59,0.25)",
                     borderLeft: `3px solid ${isCredit ? "#10b981" : "#ef4444"}`,
                   }}
                     onMouseEnter={e => e.currentTarget.style.background = isCredit ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)"}
-                    onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "rgba(15,23,42,0.35)" : "rgba(30,41,59,0.25)"}
+                    onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? "rgba(15,23,42,0.35)" : "rgba(30,41,59,0.25)"}
                   >
                     {/* # */}
-                    <div style={{ ...S.td, flex: "0 0 44px", color: "#475569", fontSize: 12 }}>
-                      {idx + 1}
+                    <div style={{ ...S.td, flex: "0 0 50px", color: "#475569", fontSize: 14 }}>
+                      {num}
                     </div>
 
                     {/* Date */}
-                    <div style={{ ...S.td, flex: "0 0 130px" }}>
-                      <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.5 }}>
+                    <div style={{ ...S.td, flex: "0 0 160px" }}>
+                      <div style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.5 }}>
                         {fmtDate(t.createdAt)}
                       </div>
                     </div>
 
                     {/* Type badge */}
-                    <div style={{ ...S.td, flex: "0 0 90px" }}>
+                    <div style={{ ...S.td, flex: "0 0 100px" }}>
                       <span style={{
-                        padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                        padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
                         background: isCredit ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
                         color: isCredit ? "#10b981" : "#ef4444",
                         border: `1px solid ${isCredit ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
@@ -287,20 +289,20 @@ export default function RiderPaidHistory() {
                     </div>
 
                     {/* Note */}
-                    <div style={{ ...S.td, flex: 1, color: "#cbd5e1", fontSize: 13 }}>
+                    <div style={{ ...S.td, flex: 1, color: "#cbd5e1", fontSize: 15 }}>
                       {t.note || <span style={{ color: "#475569" }}>—</span>}
                     </div>
 
                     {/* Amount */}
-                    <div style={{ ...S.td, flex: "0 0 130px", textAlign: "right", fontWeight: 800, fontSize: 15,
+                    <div style={{ ...S.td, flex: "0 0 150px", textAlign: "right", fontWeight: 800, fontSize: 18,
                       color: isCredit ? "#10b981" : "#ef4444" }}>
                       {isCredit ? "+" : "−"}{fmtCur(t.amount)}
                     </div>
 
                     {/* Running balance */}
-                    <div style={{ ...S.td, flex: "0 0 140px", textAlign: "right" }}>
+                    <div style={{ ...S.td, flex: "0 0 160px", textAlign: "right" }}>
                       <span style={{
-                        fontWeight: 800, fontSize: 14,
+                        fontWeight: 800, fontSize: 17,
                         color: t.displayBalance >= 0 ? "#34d399" : "#f87171",
                       }}>
                         {fmtCur(t.displayBalance)}
@@ -313,12 +315,12 @@ export default function RiderPaidHistory() {
 
             {/* Footer total */}
             <div style={S.tableFooter}>
-              <div style={{ flex: 1, color: "#475569", fontSize: 13 }}>
+              <div style={{ flex: 1, color: "#475569", fontSize: 15 }}>
                 Showing {filtered.length} of {history.length} entries
               </div>
-              <div style={{ color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>
+              <div style={{ color: "#94a3b8", fontSize: 16, fontWeight: 600 }}>
                 Closing Balance:&nbsp;
-                <span style={{ color: summary.balance >= 0 ? "#10b981" : "#ef4444", fontWeight: 800, fontSize: 15 }}>
+                <span style={{ color: summary.balance >= 0 ? "#10b981" : "#ef4444", fontWeight: 800, fontSize: 18 }}>
                   {fmtCur(summary.balance)}
                 </span>
               </div>
@@ -346,7 +348,7 @@ export default function RiderPaidHistory() {
 /* ── Styles ─────────────────────────────────────────────────────────────── */
 const S = {
   page:    { minHeight: "100vh", background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)", fontFamily: '"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' },
-  main:    { maxWidth: 1440, margin: "0 auto", padding: "40px 32px" },
+  main:    { maxWidth: 1600, margin: "0 auto", padding: "40px 40px" },
 
   center:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh" },
   spinner:  { width: 44, height: 44, border: "4px solid rgba(139,92,246,0.2)", borderTop: "4px solid #8b5cf6", borderRadius: "50%" },
@@ -371,14 +373,14 @@ const S = {
 
   empty: { textAlign: "center", padding: "70px 40px", border: "1px dashed rgba(148,163,184,0.12)", borderRadius: 18 },
 
-  tableWrap: { background: "linear-gradient(145deg,rgba(30,41,59,0.8),rgba(15,23,42,0.9))", border: "1px solid rgba(148,163,184,0.1)", borderRadius: 18, overflow: "hidden" },
+  tableWrap: { background: "linear-gradient(145deg,rgba(30,41,59,0.8),rgba(15,23,42,0.9))", border: "1px solid rgba(148,163,184,0.1)", borderRadius: 18, overflow: "hidden", fontSize: 16 },
 
-  tableHead: { display: "flex", alignItems: "center", padding: "14px 22px", background: "rgba(15,23,42,0.5)", borderBottom: "1px solid rgba(148,163,184,0.08)" },
-  th: { fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em" },
+  tableHead: { display: "flex", alignItems: "center", padding: "20px 28px", background: "rgba(15,23,42,0.5)", borderBottom: "1px solid rgba(148,163,184,0.08)" },
+  th: { fontSize: 13, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em" },
 
   tableBody: { display: "flex", flexDirection: "column" },
-  row: { display: "flex", alignItems: "center", padding: "14px 22px", borderBottom: "1px solid rgba(148,163,184,0.05)", transition: "background 0.15s", cursor: "default" },
-  td: { fontSize: 14, color: "#94a3b8" },
+  row: { display: "flex", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid rgba(148,163,184,0.05)", transition: "background 0.15s", cursor: "default" },
+  td: { fontSize: 16, color: "#94a3b8" },
 
-  tableFooter: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px", borderTop: "1px solid rgba(148,163,184,0.08)", background: "rgba(15,23,42,0.4)" },
+  tableFooter: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 28px", borderTop: "1px solid rgba(148,163,184,0.08)", background: "rgba(15,23,42,0.4)" },
 };

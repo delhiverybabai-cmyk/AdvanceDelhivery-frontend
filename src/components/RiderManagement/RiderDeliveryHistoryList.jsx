@@ -9,6 +9,11 @@ const RiderDeliveryHistoryList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortOrder, setSortOrder] = useState("desc");
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [updateDate, setUpdateDate] = useState("");
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
 
   const styles = {
     container: { minHeight: "100vh", backgroundColor: "#0f172a", fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" },
@@ -62,6 +67,45 @@ const RiderDeliveryHistoryList = () => {
     } finally { setLoading(false); }
   };
 
+  const openUpdateModal = (record) => {
+    setSelectedRecord(record);
+    const date = new Date(record.createdAt);
+    setUpdateDate(date.toISOString().split("T")[0]);
+    setIsUpdateModalOpen(true);
+    setUpdateError(null);
+  };
+
+  const closeUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedRecord(null);
+    setUpdateDate("");
+    setUpdateError(null);
+  };
+
+  const handleUpdateDate = async (e) => {
+    e.preventDefault();
+    if (!updateDate) {
+      setUpdateError("Date is required");
+      return;
+    }
+    const selectedObj = new Date(updateDate);
+    if (selectedObj > new Date()) {
+      setUpdateError("Date cannot be in the future");
+      return;
+    }
+
+    setUpdateLoading(true);
+    try {
+      await axios.put(`${process.env.REACT_APP_BASE_URL}/api/rider-payment/delivery-payment-history/${selectedRecord._id}`, { selectedDate: updateDate });
+      closeUpdateModal();
+      fetchDeliveryHistory();
+    } catch (err) {
+      setUpdateError(err.response?.data?.message || "Failed to update date.");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   const handleRowHover = (e, isEnter) => {
     if (isEnter) { e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.1)"; e.currentTarget.style.transform = "scale(1.01)"; }
     else { e.currentTarget.style.backgroundColor = ""; e.currentTarget.style.transform = "scale(1)"; }
@@ -79,6 +123,20 @@ const RiderDeliveryHistoryList = () => {
   if (error) return <div style={styles.container}><main style={styles.main}><button style={styles.backButton} onClick={() => navigate(`/rider-management`)}>← Back</button><div style={styles.errorContainer}><h3>⚠️ Error</h3><p>{error}</p><button style={{ padding: "12px 24px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }} onClick={fetchDeliveryHistory}>🔄 Retry</button></div></main></div>;
 
   const summary = calculateSummary();
+
+  const modalStyles = {
+    overlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 },
+    modal: { background: "linear-gradient(145deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%)", border: "1px solid rgba(148, 163, 184, 0.2)", borderRadius: "16px", padding: "32px", width: "100%", maxWidth: "400px", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" },
+    title: { fontSize: "24px", fontWeight: "700", color: "#ffffff", marginBottom: "8px", textAlign: "center" },
+    subtitle: { fontSize: "14px", color: "#94a3b8", marginBottom: "24px", textAlign: "center" },
+    label: { display: "block", fontSize: "14px", fontWeight: "600", color: "#e2e8f0", marginBottom: "8px" },
+    input: { width: "100%", padding: "12px 16px", fontSize: "16px", color: "#ffffff", backgroundColor: "rgba(15, 23, 42, 0.6)", border: "1px solid rgba(148, 163, 184, 0.2)", borderRadius: "8px", outline: "none", marginBottom: "16px", boxSizing: "border-box", colorScheme: "dark" },
+    buttonGroup: { display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "24px" },
+    submitBtn: { padding: "10px 20px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "600", opacity: 1 },
+    submitBtnDisabled: { opacity: 0.7, cursor: "not-allowed" },
+    cancelBtn: { padding: "10px 20px", background: "transparent", color: "#94a3b8", border: "1px solid rgba(148, 163, 184, 0.3)", borderRadius: "8px", cursor: "pointer", fontWeight: "600" },
+    error: { color: "#ef4444", fontSize: "14px", marginBottom: "16px", textAlign: "center", background: "rgba(239,68,68,0.1)", padding: "8px", borderRadius: "8px" }
+  };
 
   return (
     <div style={styles.container}>
@@ -118,7 +176,9 @@ const RiderDeliveryHistoryList = () => {
                       <td style={{ ...styles.td, ...styles.returnValue }}>{record.parcelsReturnInHub || 0}</td>
                       <td style={{ ...styles.td, ...styles.earningsValue }}>{formatCurrency(record.cashedDeposited)}</td>
                       <td style={{ ...styles.td, ...styles.earningsValue }}>{formatCurrency(record.riderEarning)}</td>
-                      <td style={styles.td}><button style={styles.sortButton} onClick={() => navigate(`/update-rider-delivery-history/${record._id}/${record.riderId}`)}>Update</button></td>
+                      <td style={styles.td}>
+                        <button style={styles.sortButton} onClick={() => openUpdateModal(record)}>✏️ Update</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -127,6 +187,36 @@ const RiderDeliveryHistoryList = () => {
           </div>
         )}
       </main>
+
+      {isUpdateModalOpen && (
+        <div style={modalStyles.overlay}>
+          <div style={modalStyles.modal}>
+            <h2 style={modalStyles.title}>Update Date</h2>
+            <p style={modalStyles.subtitle}>Modify the date for this delivery record</p>
+            
+            {updateError && <div style={modalStyles.error}>⚠️ {updateError}</div>}
+            
+            <form onSubmit={handleUpdateDate}>
+              <label style={modalStyles.label}>Select New Date</label>
+              <input 
+                type="date" 
+                value={updateDate} 
+                onChange={(e) => setUpdateDate(e.target.value)} 
+                style={modalStyles.input} 
+                max={new Date().toISOString().split("T")[0]}
+                disabled={updateLoading}
+              />
+              
+              <div style={modalStyles.buttonGroup}>
+                <button type="button" onClick={closeUpdateModal} style={modalStyles.cancelBtn} disabled={updateLoading}>Cancel</button>
+                <button type="submit" style={{ ...modalStyles.submitBtn, ...(updateLoading ? modalStyles.submitBtnDisabled : {}) }} disabled={updateLoading}>
+                  {updateLoading ? "Updating..." : "Update Date"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

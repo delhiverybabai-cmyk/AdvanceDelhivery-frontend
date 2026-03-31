@@ -5,11 +5,30 @@ import { useParams, useNavigate } from "react-router-dom";
 const AddRiderDeliveryHistory = () => {
   const { riderId } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ riderId: riderId || "", assignedParcels: "", successfulDelivered: "", successfulRVP: "", cashedDeposited: "", perParcelRate: 15, selectedDate: "" });
+  const [formData, setFormData] = useState({ 
+    riderId: riderId || "", 
+    assignedParcels: "", 
+    successfulDelivered: "", 
+    successfulRVP: "", 
+    cashedDeposited: "", 
+    perParcelRate: 15, 
+    selectedDate: new Date().toISOString().split("T")[0] // default to today
+  });
   const computedReturnInHub = Math.max(0, (Number(formData.assignedParcels) || 0) - (Number(formData.successfulDelivered) || 0) - (Number(formData.successfulRVP) || 0));
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  const [riderName, setRiderName] = useState("");
+  const dateInputRef = React.useRef(null);
+
+  // Fetch rider info to show name
+  React.useEffect(() => {
+    if (riderId) {
+      axios.get(`${process.env.REACT_APP_BASE_URL}/api/rider/get-rider/${riderId}`)
+        .then(res => setRiderName(res.data?.data?.name || res.data?.name || "Unknown Rider"))
+        .catch(() => setRiderName("Unknown Rider"));
+    }
+  }, [riderId]);
 
   const s = {
     container: { minHeight: "100vh", backgroundColor: "#0f172a", fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" },
@@ -19,7 +38,8 @@ const AddRiderDeliveryHistory = () => {
     mainTitle: { fontSize: "42px", fontWeight: "800", background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "16px", letterSpacing: "-0.02em" },
     subtitle: { fontSize: "18px", color: "#94a3b8", lineHeight: "1.6" },
     riderInfo: { background: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "12px", padding: "16px 20px", marginBottom: "32px", textAlign: "center" },
-    riderIdLabel: { fontSize: "12px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+    riderNameLabel: { fontSize: "20px", color: "#e2e8f0", fontWeight: "800", marginBottom: "4px" },
+    riderIdLabel: { fontSize: "12px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" },
     formContainer: { background: "linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)", backdropFilter: "blur(10px)", border: "1px solid rgba(148, 163, 184, 0.1)", borderRadius: "20px", padding: "40px", position: "relative" },
     formGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" },
     formGroup: { marginBottom: "24px" },
@@ -84,9 +104,12 @@ const AddRiderDeliveryHistory = () => {
   return (
     <div style={s.container}>
       <main style={s.main}>
-        <button style={s.backButton} onClick={() => navigate(`/delhivery-history/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back to Delivery History</button>
+        <button style={s.backButton} onClick={() => navigate(`/rider-delivery-history/${riderId}`)} onMouseEnter={e => { e.target.style.background = "rgba(148,163,184,0.2)"; e.target.style.color = "#e2e8f0"; }} onMouseLeave={e => { e.target.style.background = "rgba(148,163,184,0.1)"; e.target.style.color = "#94a3b8"; }}>← Back to Delivery History</button>
         <div style={s.headerSection}><h1 style={s.mainTitle}>Add Delivery History</h1><p style={s.subtitle}>Record new delivery and payment history for the rider</p></div>
-        <div style={s.riderInfo}><div style={s.riderIdLabel}>Rider ID: {formData.riderId}</div></div>
+        <div style={s.riderInfo}>
+          <div style={s.riderNameLabel}>👤 {riderName || "Loading..."}</div>
+          <div style={s.riderIdLabel}>ID: {formData.riderId}</div>
+        </div>
         <div style={s.formContainer}>
           {success && <div style={s.successMessage}><span>✅</span><span>Delivery history added successfully! Redirecting...</span></div>}
           {errors.submit && <div style={{ ...s.successMessage, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.3)", color: "#ef4444" }}><span>⚠️</span><span>{errors.submit}</span></div>}
@@ -121,12 +144,12 @@ const AddRiderDeliveryHistory = () => {
               <div style={s.formGroup}>
                 <label htmlFor="selectedDate" style={s.label}>Select Date *</label>
                 <div style={s.inputWrapper}>
-                  <input type="date" id="selectedDate" name="selectedDate" value={formData.selectedDate} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} style={s.input} disabled={loading} />
-                  <div style={s.inputIcon}>📅</div>
+                  <input ref={dateInputRef} type="date" id="selectedDate" name="selectedDate" value={formData.selectedDate} onChange={handleInputChange} onFocus={handleFocus} onBlur={handleBlur} style={s.input} disabled={loading} />
+                  <div style={{ ...s.inputIcon, cursor: "pointer" }} onClick={() => dateInputRef.current && dateInputRef.current.showPicker && dateInputRef.current.showPicker()}>📅</div>
                 </div>
               </div>
               <div style={s.buttonGroup}>
-                <button type="button" onClick={() => navigate(`/delhivery-history/${riderId}`)} style={s.cancelButton} disabled={loading}>Cancel</button>
+                <button type="button" onClick={() => navigate(`/rider-delivery-history/${riderId}`)} style={s.cancelButton} disabled={loading}>Cancel</button>
                 <button type="submit" style={{ ...s.submitButton, ...(loading ? s.submitButtonDisabled : {}) }} disabled={loading}>
                   {loading ? <><SpinnerComponent />Adding History...</> : <><span style={{ marginRight: "8px" }}>💾</span>Add History</>}
                 </button>
