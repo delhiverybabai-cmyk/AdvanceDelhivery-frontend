@@ -26,7 +26,7 @@ import AddExpenseProfit from "./components/Expense/AddExpenseProfit";
 
 function App() {
   return (
-    <Router>
+    <Router basename="/admin">
       <Routes>
         <Route path="/" element={<DashboardLayout />}>
           <Route path="/" element={<OverViewManagment />} />
