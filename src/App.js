@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./components/layouts/DashboardLayout";
 import RiderManagement from "./components/RiderManagement/RiderManagment";
 import AddNewRider from "./components/RiderManagement/AddNewRider";
@@ -23,8 +23,24 @@ import RiderDebtManagement from "./components/RiderManagement/RiderDebtManagemen
 import RiderPaidHistory from "./components/RiderManagement/RiderPaidHistory";
 import ExpenseProfitList from "./components/Expense/ExpenseProfitList";
 import AddExpenseProfit from "./components/Expense/AddExpenseProfit";
+import RiderOnlyManagement from "./components/RiderManagement/RiderOnlyManagement";
 
 function App() {
+  const isRiderRoute = window.location.pathname.startsWith("/rider");
+
+  if (isRiderRoute) {
+    return (
+      <Router basename="/rider">
+        <Routes>
+          <Route path="/" element={<Navigate to="/rider-management" replace />} />
+          <Route path="rider-management" element={<RiderOnlyManagement />} />
+          <Route path="rider-delivery-history/:riderId" element={<RiderDeliveryHistoryList />} />
+          <Route path="rider-paid-history/:riderId" element={<RiderPaidHistory />} />
+        </Routes>
+      </Router>
+    );
+  }
+
   return (
     <Router basename="/admin">
       <Routes>

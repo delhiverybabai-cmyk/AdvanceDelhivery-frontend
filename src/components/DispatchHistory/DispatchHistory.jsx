@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
@@ -225,7 +225,7 @@ export default function DispatchHistory() {
 
   useEffect(() => { fetchHistory(filterDate, page); }, [filterDate, page, fetchHistory]);
 
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     setSyncing(true);
     const tid = toast.loading("Syncing from Delhivery…");
     try {
@@ -243,7 +243,15 @@ export default function DispatchHistory() {
       if (res.data.success) fetchHistory(filterDate, page);
     } catch { toast.update(tid, { render: "Server error", type: "error", isLoading: false, autoClose: 3000 }); }
     finally  { setSyncing(false); }
-  };
+  }, [filterDate, page, fetchHistory]);
+
+  const hasAutoSynced = useRef(false);
+  useEffect(() => {
+    if (!hasAutoSynced.current) {
+      hasAutoSynced.current = true;
+      handleSync();
+    }
+  }, [handleSync]);
 
   // Tab-filtered list
   const tabStatuses = TAB_STATUSES[activeTab];
@@ -282,7 +290,8 @@ export default function DispatchHistory() {
           <p style={S.sub}>🕒 {filterDate}</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <input type="date" style={S.dateInput} value={filterDate}
+          <input type="date" style={S.dateInput} value={filterDate} min="2026-04-01"
+            onKeyDown={e => e.preventDefault()}
             onChange={e => { setFilterDate(e.target.value); setPage(1); setExpandedId(null); }} />
           <button style={S.syncBtn} onClick={handleSync} disabled={syncing}>
             {syncing ? "🔄 Syncing…" : "☁️ Sync"}
