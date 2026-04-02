@@ -5,7 +5,7 @@ const navItems = [
   { path: "/live-dispatch", label: "Live Dispatch" },
   { path: "/dispatch-history", label: "Dispatch History" },
   { path: "/rider-management", label: "Rider Management" },
-  { path: "/", label: "Overview" },
+  { path: "/overview", label: "Overview" },
   { path: "/token-management", label: "Token Management" },
 ];
 

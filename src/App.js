@@ -45,7 +45,8 @@ function App() {
     <Router basename="/admin">
       <Routes>
         <Route path="/" element={<DashboardLayout />}>
-          <Route path="/" element={<OverViewManagment />} />
+          <Route index element={<Navigate to="live-dispatch" replace />} />
+          <Route path="overview" element={<OverViewManagment />} />
           <Route path="rider-management" element={<RiderManagement />} />
           <Route path="rider-management/record" element={<RiderManagement />} />
           <Route path="add-rider" element={<AddNewRider />} />
