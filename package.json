@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "npm run build",
+    "build": "react-scripts build",
     "server": "npx serve -s build -l 3010",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
