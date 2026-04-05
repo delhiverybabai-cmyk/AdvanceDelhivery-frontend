@@ -92,6 +92,7 @@ const styles = {
 export default function TokenManagement() {
   const [token, setToken] = useState("");
   const [cookieToken, setCookieToken] = useState(""); // ✅ Manual cookie token input
+  const [csrfToken, setCsrfToken] = useState(""); // ✅ Manual csrf token input
   const [number, setNumber] = useState("+916262613168");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -99,8 +100,8 @@ export default function TokenManagement() {
 
   const handleTokenUpdate = async (e) => {
     e.preventDefault();
-    if (!token.trim()) {
-      toast.error("Please enter a token value.");
+    if (!token.trim() && !cookieToken.trim() && !csrfToken.trim()) {
+      toast.error("Please enter at least one token value.");
       return;
     }
     setIsLoading(true);
@@ -108,8 +109,9 @@ export default function TokenManagement() {
       const resp = await axios.put(
         `${process.env.REACT_APP_BASE_URL}/api/dispatch/token-update`,
         {
-          token,
-          cookieToken: cookieToken.trim() || undefined, // ✅ Send cookieToken if provided
+          token: token.trim() || undefined,
+          cookieToken: cookieToken.trim() || undefined,
+          csrfToken: csrfToken.trim() || undefined, // ✅ Send csrfToken if provided
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -117,6 +119,7 @@ export default function TokenManagement() {
         toast.success("Token updated successfully.");
         setToken("");
         setCookieToken("");
+        setCsrfToken("");
       } else {
         toast.error("Token update failed.");
       }
@@ -230,9 +233,26 @@ export default function TokenManagement() {
               disabled={isLoading}
             />
           </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>CSRF Token (Optional)</label>
+            <input
+              style={{
+                ...styles.input,
+                ...(focusField === "csrfToken" ? styles.inputFocused : {}),
+              }}
+              type="text"
+              placeholder="Enter CSRF token (optional)"
+              value={csrfToken}
+              onFocus={() => setFocusField("csrfToken")}
+              onBlur={() => setFocusField("")}
+              onChange={(e) => setCsrfToken(e.target.value)}
+              spellCheck="false"
+              disabled={isLoading}
+            />
+          </div>
           <button
             style={styles.button}
-            disabled={isLoading || !token.trim()}
+            disabled={isLoading || (!token.trim() && !cookieToken.trim() && !csrfToken.trim())}
             type="submit"
           >
             {isLoading ? "Updating..." : "Update Token"}

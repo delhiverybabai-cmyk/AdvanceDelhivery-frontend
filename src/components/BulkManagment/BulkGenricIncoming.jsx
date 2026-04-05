@@ -261,9 +261,9 @@ function BulkGIGenerator() {
         throw new Error("Not an array");
       }
     } catch (e) {
-      // If JSON parsing fails, treat as newline-separated
+      // If JSON parsing fails, treat as comma, space, or newline-separated
       waybillArray = waybills
-        .split("\n")
+        .split(/[\s,]+/)
         .map((w) => w.trim())
         .filter((w) => w.length > 0);
     }
@@ -419,7 +419,7 @@ function BulkGIGenerator() {
           </label>
           <textarea
             style={styles.textarea}
-            placeholder='["1490822684288383", "37355828075864", "1490822618605563"] or paste one per line'
+            placeholder='["1490..."] or paste separated by line, comma, or space'
             value={waybills}
             onChange={(e) => setWaybills(e.target.value)}
             disabled={processing}
