@@ -25,8 +25,23 @@ import ExpenseProfitList from "./components/Expense/ExpenseProfitList";
 import AddExpenseProfit from "./components/Expense/AddExpenseProfit";
 import RiderOnlyManagement from "./components/RiderManagement/RiderOnlyManagement";
 
+import ShadowDashboard from "./components/shadow/ShadowDashboard";
+import ShadowTokenManagement from "./components/shadow/ShadowTokenManagement";
+
 function App() {
   const isRiderRoute = window.location.pathname.startsWith("/rider");
+  const isShadowRoute = window.location.pathname.startsWith("/shadow");
+
+  if (isShadowRoute) {
+    return (
+      <Router basename="/shadow">
+        <Routes>
+          <Route path="/" element={<ShadowDashboard />} />
+          <Route path="/token" element={<ShadowTokenManagement />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   if (isRiderRoute) {
     return (
